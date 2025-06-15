@@ -1,9 +1,11 @@
+"use client"
+
 import React, { useState, useEffect } from 'react';
 import { Calendar, TrendingUp, Target, Award } from 'lucide-react';
-import { FoodLog } from '../types';
-import { localStorageUtils } from '../utils/localStorage';
-import { calculateNutritionSummary } from '../utils/nutrition';
 import { format, subDays, startOfDay, endOfDay } from 'date-fns';
+import { FoodLog } from '@/types';
+import { localStorageUtils } from '@/utils/localStorage';
+import { calculateNutritionSummary } from '@/utils/nutrition';
 
 export default function ReportsPage() {
   const [foodLogs, setFoodLogs] = useState<FoodLog[]>([]);
