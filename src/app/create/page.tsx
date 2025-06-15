@@ -1,11 +1,13 @@
+"use client"
+
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Save, ArrowLeft } from 'lucide-react';
-import { Food } from '../types';
-import { localStorageUtils } from '../utils/localStorage';
+import { Food } from '@/types';
+import { localStorageUtils } from '@/utils/localStorage';
+import { useRouter } from 'next/navigation';
 
 export default function CreateFoodPage() {
-  const navigate = useNavigate();
+    const router = useRouter()
   const [formData, setFormData] = useState({
     name: '',
     brandName: '',
@@ -45,7 +47,7 @@ export default function CreateFoodPage() {
     };
 
     localStorageUtils.addFood(newFood);
-    navigate('/');
+    router.push("/")
   };
 
   const isValid = formData.name && formData.servingDescription && formData.calories;
@@ -55,7 +57,7 @@ export default function CreateFoodPage() {
       {/* Header */}
       <div className="flex items-center space-x-4">
         <button
-          onClick={() => navigate('/')}
+          onClick={() => router.push('/')}
           className="p-2 text-gray-600 hover:text-gray-900 transition-colors"
         >
           <ArrowLeft size={24} />
