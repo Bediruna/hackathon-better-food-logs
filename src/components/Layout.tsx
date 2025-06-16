@@ -43,6 +43,19 @@ export default function Layout({ children }: LayoutProps) {
       {/* Main Content */}
       <main className="max-w-4xl mx-auto px-4 py-6">
         {children}
+        <Link
+          to="https://bold.new/"
+          className="flex items-center justify-end w-full italic hover:underline"
+          target="_blank"
+          rel="noreferrer"
+        >
+          <span>Made with ❤️ and</span>
+
+          <img
+            src="src/public/white_circle_360x360.png"
+            className="inline h-8 pl-1"
+          />
+        </Link>
       </main>
 
       {/* Bottom Navigation */}
