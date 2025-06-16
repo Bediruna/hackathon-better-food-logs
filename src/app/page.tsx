@@ -1,14 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { Plus, Zap } from 'lucide-react';
-import SearchBar from '../components/SearchBar';
-import FoodLogEntry from '../components/FoodLogEntry';
-import TodaysSummary from '../components/TodaysSummary';
-import { Food, FoodLog } from '../types';
-import { localStorageUtils } from '../utils/localStorage';
-import { sampleFoods } from '../utils/sampleData';
+"use client"
 
-export default function HomePage() {
+import FoodLogEntry from "@/components/FoodLogEntry";
+import SearchBar from "@/components/SearchBar";
+import TodaysSummary from "@/components/TodaysSummary";
+import { Food, FoodLog } from "@/types";
+import { localStorageUtils } from "@/utils/localStorage";
+import { sampleFoods } from "@/utils/sampleData";
+import { Plus, Zap } from "lucide-react";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+
+export default function Home() {
   const [foods, setFoods] = useState<Food[]>([]);
   const [foodLogs, setFoodLogs] = useState<FoodLog[]>([]);
   const [selectedFood, setSelectedFood] = useState<Food | null>(null);
@@ -63,7 +65,7 @@ export default function HomePage() {
     logDate.setHours(0, 0, 0, 0);
     return logDate.getTime() === today.getTime();
   });
-
+  
   return (
     <div className="space-y-6">
       {/* Hero Section */}
@@ -89,7 +91,7 @@ export default function HomePage() {
         
         <div className="flex justify-center">
           <Link
-            to="/create"
+            href="/create"
             className="inline-flex items-center space-x-2 px-6 py-3 bg-white/80 backdrop-blur-sm border border-gray-200 rounded-lg hover:shadow-md transition-all duration-200 text-gray-700 hover:text-emerald-600"
           >
             <Plus size={16} />
