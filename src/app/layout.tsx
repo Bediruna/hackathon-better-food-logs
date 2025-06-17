@@ -3,11 +3,12 @@
 // import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { StrictMode, useEffect, useState } from "react";
+import { StrictMode } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { BarChart3, Home, User, LogOut } from "lucide-react";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { usePathname } from "next/navigation";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -20,28 +21,15 @@ const geistMono = Geist_Mono({
 });
 
 function LayoutContent({ children }: { children: React.ReactNode }) {
-  const [location, setLocation] = useState<typeof window.location | null>(null);
   const { user, logout, loading } = useAuth();
-
-  useEffect(() => {
-    // Only runs on the client-side
-    if (typeof window !== "undefined") {
-      setLocation(window.location);
-    }
-  }, []); // Empty dependency array means this runs only once, after the component mounts
 
   const navItems = [
     { path: "/", icon: Home, label: "Home" },
     { path: "/reports", icon: BarChart3, label: "Reports" },
   ];
 
-  const isActive = (path: string): boolean => {
-    if (!location) return false; // Make sure location is available
-    return location.pathname === path;
-  };
-
-  // Don't show navigation on auth page
-  const isAuthPage = location?.pathname === '/auth';
+  const location = usePathname()
+  const isAuthPage = location === '/auth';
 
   const handleLogout = async () => {
     try {
@@ -133,12 +121,14 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
         <nav className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-sm border-t border-emerald-100">
           <div className="max-w-4xl mx-auto px-4">
             <div className="flex justify-around py-2">
-              {navItems.map(({ path, icon: Icon, label }) => (
+              {navItems.map(({ path, icon: Icon, label }) => {
+                console.log(path)
+                return(
                 <Link
                   key={path}
                   href={path}
                   className={`flex flex-col items-center py-2 px-4 transition-all duration-200 ${
-                    isActive(path)
+                    location === path
                       ? "text-emerald-600"
                       : "text-gray-500 hover:text-emerald-500"
                   }`}
@@ -146,7 +136,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
                   <Icon size={20} />
                   <span className="text-xs mt-1">{label}</span>
                 </Link>
-              ))}
+              )})}
             </div>
           </div>
         </nav>
