@@ -5,7 +5,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { StrictMode, useEffect, useState } from "react";
 import Link from "next/link";
-import Image from "next/link";
+import Image from "next/image";
 import { BarChart3, Home, Plus, User } from "lucide-react";
 
 const geistSans = Geist({
@@ -91,16 +91,18 @@ export default function RootLayout({
               {children}
               <Link
                 href="https://bolt.new/"
-                className="flex items-center justify-end w-full italic hover:underline"
+                className="flex gap-1 pt-2 items-center justify-end w-full italic hover:underline"
                 target="_blank"
                 rel="noreferrer"
               >
                 <span>Made with ❤️ and</span>
 
                 <Image
-                  src="/public/white_circle_360x360.png"
+                  src="/white_circle_360x360.png"
                   alt="Made with Bolt"
-                  className="inline h-8 pl-1"
+                  width={32}
+                  height={32}
+                  className="inline size-8"
                 />
               </Link>
             </main>
