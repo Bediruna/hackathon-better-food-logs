@@ -32,7 +32,6 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
 
   const navItems = [
     { path: "/", icon: Home, label: "Home" },
-    { path: "/create", icon: Plus, label: "Create" },
     { path: "/reports", icon: BarChart3, label: "Reports" },
   ];
 
