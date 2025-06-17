@@ -100,6 +100,8 @@ export default function RootLayout({
                 <Image
                   src="/white_circle_360x360.png"
                   alt="Made with Bolt"
+                  width={360}
+                  height={360}
                   className="inline h-8 pl-1"
                 />
               </Link>
