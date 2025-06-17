@@ -6,7 +6,7 @@ import "./globals.css";
 import { StrictMode, useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { BarChart3, Home, Plus, User, LogOut } from "lucide-react";
+import { BarChart3, Home, User, LogOut } from "lucide-react";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 
 const geistSans = Geist({
