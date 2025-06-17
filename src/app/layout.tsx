@@ -5,7 +5,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { StrictMode, useEffect, useState } from "react";
 import Link from "next/link";
-import Image from "next/link";
+import Image from "next/image";
 import { BarChart3, Home, Plus, User } from "lucide-react";
 
 const geistSans = Geist({
@@ -98,7 +98,7 @@ export default function RootLayout({
                 <span>Made with ❤️ and</span>
 
                 <Image
-                  src="/public/white_circle_360x360.png"
+                  src="/white_circle_360x360.png"
                   alt="Made with Bolt"
                   className="inline h-8 pl-1"
                 />
