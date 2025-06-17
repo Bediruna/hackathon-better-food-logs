@@ -82,22 +82,27 @@ export default function AuthPage() {
         await signIn(formData.email, formData.password);
       }
       router.push('/');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Authentication error:', error);
-      
       // Handle Firebase auth errors
       let errorMessage = 'An error occurred. Please try again.';
-      
-      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-        errorMessage = 'Invalid email or password.';
-      } else if (error.code === 'auth/email-already-in-use') {
-        errorMessage = 'An account with this email already exists.';
-      } else if (error.code === 'auth/weak-password') {
-        errorMessage = 'Password should be at least 6 characters.';
-      } else if (error.code === 'auth/invalid-email') {
-        errorMessage = 'Please enter a valid email address.';
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        typeof (error as { code?: unknown }).code === 'string'
+      ) {
+        const code = (error as { code: string }).code;
+        if (code === 'auth/user-not-found' || code === 'auth/wrong-password') {
+          errorMessage = 'Invalid email or password.';
+        } else if (code === 'auth/email-already-in-use') {
+          errorMessage = 'An account with this email already exists.';
+        } else if (code === 'auth/weak-password') {
+          errorMessage = 'Password should be at least 6 characters.';
+        } else if (code === 'auth/invalid-email') {
+          errorMessage = 'Please enter a valid email address.';
+        }
       }
-      
       setErrors({ general: errorMessage });
     } finally {
       setIsLoading(false);
@@ -111,17 +116,22 @@ export default function AuthPage() {
     try {
       await signInWithGoogle();
       router.push('/');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Google sign-in error:', error);
-      
       let errorMessage = 'Failed to sign in with Google. Please try again.';
-      
-      if (error.code === 'auth/popup-closed-by-user') {
-        errorMessage = 'Sign-in was cancelled.';
-      } else if (error.code === 'auth/popup-blocked') {
-        errorMessage = 'Pop-up was blocked. Please allow pop-ups and try again.';
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        typeof (error as { code?: unknown }).code === 'string'
+      ) {
+        const code = (error as { code: string }).code;
+        if (code === 'auth/popup-closed-by-user') {
+          errorMessage = 'Sign-in was cancelled.';
+        } else if (code === 'auth/popup-blocked') {
+          errorMessage = 'Pop-up was blocked. Please allow pop-ups and try again.';
+        }
       }
-      
       setErrors({ general: errorMessage });
     } finally {
       setIsLoading(false);
