@@ -100,7 +100,7 @@ export default function RootLayout({
               {!isAuthPage && (
                 <Link
                   href="https://bolt.new/"
-                  className="flex items-center justify-end w-full italic hover:underline"
+                  className="flex items-center pt-2 gap-1 justify-end w-full italic hover:underline"
                   target="_blank"
                   rel="noreferrer"
                 >
@@ -109,9 +109,9 @@ export default function RootLayout({
                   <Image
                     src="/white_circle_360x360.png"
                     alt="Made with Bolt"
-                    width={360}
-                    height={360}
-                    className="inline h-8 pl-1"
+                    width={32}
+                    height={32}
+                    className="inline size-8"
                   />
                 </Link>
               )}
