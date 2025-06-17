@@ -12,7 +12,20 @@ export default function FoodLogEntry({ food, onLog, onCancel }: FoodLogEntryProp
   const [servings, setServings] = useState(1);
 
   const adjustServings = (delta: number) => {
-    setServings(Math.max(0.25, servings + delta));
+    setServings(prev => {
+      const next = Math.max(0.25, Math.round((prev + delta) * 100) / 100);
+      return next;
+    });
+  };
+
+  const handleServingsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    const num = parseFloat(value);
+    if (!isNaN(num) && num > 0) {
+      setServings(Math.round(num * 100) / 100);
+    } else if (value === "") {
+      setServings(0);
+    }
   };
 
   const handleLog = () => {
@@ -69,7 +82,14 @@ export default function FoodLogEntry({ food, onLog, onCancel }: FoodLogEntryProp
           >
             <Minus size={14} />
           </button>
-          <span className="min-w-[3rem] text-center font-semibold">{servings}</span>
+          <input
+            type="number"
+            min="0.25"
+            step="0.01"
+            value={servings}
+            onChange={handleServingsChange}
+            className="w-16 text-center font-semibold border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+          />
           <button
             onClick={() => adjustServings(0.25)}
             className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center hover:bg-gray-300 transition-colors"
