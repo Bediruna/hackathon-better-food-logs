@@ -1,10 +1,10 @@
-"use client"
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Mail, Lock, User, Eye, EyeOff, Zap } from 'lucide-react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
+import React, { useState, useEffect } from "react";
+import { ArrowLeft, Mail, Lock, User, Eye, EyeOff, Zap } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function AuthPage() {
   const router = useRouter();
@@ -13,10 +13,10 @@ export default function AuthPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
@@ -24,15 +24,15 @@ export default function AuthPage() {
   // Redirect if user is already authenticated
   useEffect(() => {
     if (user) {
-      router.push('/');
+      router.push("/");
     }
   }, [user, router]);
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
     // Clear error when user starts typing
     if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
+      setErrors((prev) => ({ ...prev, [field]: "" }));
     }
   };
 
@@ -40,26 +40,26 @@ export default function AuthPage() {
     const newErrors: Record<string, string> = {};
 
     if (isSignUp && !formData.name.trim()) {
-      newErrors.name = 'Name is required';
+      newErrors.name = "Name is required";
     }
 
     if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
+      newErrors.email = "Email is required";
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
+      newErrors.email = "Please enter a valid email address";
     }
 
     if (!formData.password) {
-      newErrors.password = 'Password is required';
+      newErrors.password = "Password is required";
     } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
+      newErrors.password = "Password must be at least 6 characters";
     }
 
     if (isSignUp) {
       if (!formData.confirmPassword) {
-        newErrors.confirmPassword = 'Please confirm your password';
+        newErrors.confirmPassword = "Please confirm your password";
       } else if (formData.password !== formData.confirmPassword) {
-        newErrors.confirmPassword = 'Passwords do not match';
+        newErrors.confirmPassword = "Passwords do not match";
       }
     }
 
@@ -69,7 +69,7 @@ export default function AuthPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
 
     setIsLoading(true);
@@ -81,26 +81,26 @@ export default function AuthPage() {
       } else {
         await signIn(formData.email, formData.password);
       }
-      router.push('/');
+      router.push("/");
     } catch (error: unknown) {
-      console.error('Authentication error:', error);
+      console.error("Authentication error:", error);
       // Handle Firebase auth errors
-      let errorMessage = 'An error occurred. Please try again.';
+      let errorMessage = "An error occurred. Please try again.";
       if (
-        typeof error === 'object' &&
+        typeof error === "object" &&
         error !== null &&
-        'code' in error &&
-        typeof (error as { code?: unknown }).code === 'string'
+        "code" in error &&
+        typeof (error as { code?: unknown }).code === "string"
       ) {
         const code = (error as { code: string }).code;
-        if (code === 'auth/user-not-found' || code === 'auth/wrong-password') {
-          errorMessage = 'Invalid email or password.';
-        } else if (code === 'auth/email-already-in-use') {
-          errorMessage = 'An account with this email already exists.';
-        } else if (code === 'auth/weak-password') {
-          errorMessage = 'Password should be at least 6 characters.';
-        } else if (code === 'auth/invalid-email') {
-          errorMessage = 'Please enter a valid email address.';
+        if (code === "auth/user-not-found" || code === "auth/wrong-password") {
+          errorMessage = "Invalid email or password.";
+        } else if (code === "auth/email-already-in-use") {
+          errorMessage = "An account with this email already exists.";
+        } else if (code === "auth/weak-password") {
+          errorMessage = "Password should be at least 6 characters.";
+        } else if (code === "auth/invalid-email") {
+          errorMessage = "Please enter a valid email address.";
         }
       }
       setErrors({ general: errorMessage });
@@ -115,21 +115,22 @@ export default function AuthPage() {
 
     try {
       await signInWithGoogle();
-      router.push('/');
+      router.push("/");
     } catch (error: unknown) {
-      console.error('Google sign-in error:', error);
-      let errorMessage = 'Failed to sign in with Google. Please try again.';
+      console.error("Google sign-in error:", error);
+      let errorMessage = "Failed to sign in with Google. Please try again.";
       if (
-        typeof error === 'object' &&
+        typeof error === "object" &&
         error !== null &&
-        'code' in error &&
-        typeof (error as { code?: unknown }).code === 'string'
+        "code" in error &&
+        typeof (error as { code?: unknown }).code === "string"
       ) {
         const code = (error as { code: string }).code;
-        if (code === 'auth/popup-closed-by-user') {
-          errorMessage = 'Sign-in was cancelled.';
-        } else if (code === 'auth/popup-blocked') {
-          errorMessage = 'Pop-up was blocked. Please allow pop-ups and try again.';
+        if (code === "auth/popup-closed-by-user") {
+          errorMessage = "Sign-in was cancelled.";
+        } else if (code === "auth/popup-blocked") {
+          errorMessage =
+            "Pop-up was blocked. Please allow pop-ups and try again.";
         }
       }
       setErrors({ general: errorMessage });
@@ -140,7 +141,7 @@ export default function AuthPage() {
 
   const toggleAuthMode = () => {
     setIsSignUp(!isSignUp);
-    setFormData({ name: '', email: '', password: '', confirmPassword: '' });
+    setFormData({ name: "", email: "", password: "", confirmPassword: "" });
     setErrors({});
   };
 
@@ -150,13 +151,13 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-blue-50 flex items-center justify-center p-4">
+    <div className="flex items-center justify-center min-h-screen p-4 bg-gradient-to-br from-emerald-50 via-white to-blue-50">
       <div className="w-full max-w-md">
         {/* Back Button */}
         <div className="mb-6">
           <button
-            onClick={() => router.push('/')}
-            className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors"
+            onClick={() => router.push("/")}
+            className="flex items-center space-x-2 text-gray-600 transition-colors hover:text-gray-900"
           >
             <ArrowLeft size={20} />
             <span>Back to Home</span>
@@ -164,28 +165,27 @@ export default function AuthPage() {
         </div>
 
         {/* Auth Card */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200 p-8">
+        <div className="p-8 border border-gray-200 shadow-xl bg-white/80 backdrop-blur-sm rounded-2xl">
           {/* Header */}
-          <div className="text-center mb-8">
+          <div className="mb-8 text-center">
             <div className="flex items-center justify-center mb-4">
-              <div className="w-12 h-12 bg-gradient-to-r from-emerald-500 to-blue-500 rounded-xl flex items-center justify-center">
+              <div className="flex items-center justify-center w-12 h-12 bg-gradient-to-r from-emerald-500 to-blue-500 rounded-xl">
                 <Zap className="text-white" size={24} />
               </div>
             </div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent mb-2">
-              {isSignUp ? 'Create Account' : 'Welcome Back'}
+            <h1 className="mb-2 text-2xl font-bold text-transparent bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text">
+              {isSignUp ? "Create Account" : "Welcome Back"}
             </h1>
             <p className="text-gray-600">
-              {isSignUp 
-                ? 'Start your nutrition journey today' 
-                : 'Sign in to continue tracking your nutrition'
-              }
+              {isSignUp
+                ? "Start your nutrition journey today"
+                : "Sign in to continue tracking your nutrition"}
             </p>
           </div>
 
           {/* General Error Message */}
           {errors.general && (
-            <div className="mb-6 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <div className="p-3 mb-6 border border-red-200 rounded-lg bg-red-50">
               <p className="text-sm text-red-600">{errors.general}</p>
             </div>
           )}
@@ -195,17 +195,22 @@ export default function AuthPage() {
             {/* Name Field (Sign Up Only) */}
             {isSignUp && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block mb-2 text-sm font-medium text-gray-700">
                   Full Name
                 </label>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                  <User
+                    className="absolute text-gray-400 transform -translate-y-1/2 left-3 top-1/2"
+                    size={18}
+                  />
                   <input
                     type="text"
                     value={formData.name}
-                    onChange={(e) => handleInputChange('name', e.target.value)}
+                    onChange={(e) => handleInputChange("name", e.target.value)}
                     className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 ${
-                      errors.name ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                      errors.name
+                        ? "border-red-300 bg-red-50"
+                        : "border-gray-300"
                     }`}
                     placeholder="Enter your full name"
                     disabled={isLoading}
@@ -219,17 +224,22 @@ export default function AuthPage() {
 
             {/* Email Field */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block mb-2 text-sm font-medium text-gray-700">
                 Email Address
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                <Mail
+                  className="absolute text-gray-400 transform -translate-y-1/2 left-3 top-1/2"
+                  size={18}
+                />
                 <input
                   type="email"
                   value={formData.email}
-                  onChange={(e) => handleInputChange('email', e.target.value)}
+                  onChange={(e) => handleInputChange("email", e.target.value)}
                   className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 ${
-                    errors.email ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                    errors.email
+                      ? "border-red-300 bg-red-50"
+                      : "border-gray-300"
                   }`}
                   placeholder="Enter your email"
                   disabled={isLoading}
@@ -242,17 +252,24 @@ export default function AuthPage() {
 
             {/* Password Field */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block mb-2 text-sm font-medium text-gray-700">
                 Password
               </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                <Lock
+                  className="absolute text-gray-400 transform -translate-y-1/2 left-3 top-1/2"
+                  size={18}
+                />
                 <input
-                  type={showPassword ? 'text' : 'password'}
+                  type={showPassword ? "text" : "password"}
                   value={formData.password}
-                  onChange={(e) => handleInputChange('password', e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("password", e.target.value)
+                  }
                   className={`w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 ${
-                    errors.password ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                    errors.password
+                      ? "border-red-300 bg-red-50"
+                      : "border-gray-300"
                   }`}
                   placeholder="Enter your password"
                   disabled={isLoading}
@@ -260,7 +277,7 @@ export default function AuthPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute text-gray-400 transform -translate-y-1/2 right-3 top-1/2 hover:text-gray-600"
                   disabled={isLoading}
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -274,17 +291,24 @@ export default function AuthPage() {
             {/* Confirm Password Field (Sign Up Only) */}
             {isSignUp && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block mb-2 text-sm font-medium text-gray-700">
                   Confirm Password
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                  <Lock
+                    className="absolute text-gray-400 transform -translate-y-1/2 left-3 top-1/2"
+                    size={18}
+                  />
                   <input
-                    type={showConfirmPassword ? 'text' : 'password'}
+                    type={showConfirmPassword ? "text" : "password"}
                     value={formData.confirmPassword}
-                    onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("confirmPassword", e.target.value)
+                    }
                     className={`w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 ${
-                      errors.confirmPassword ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                      errors.confirmPassword
+                        ? "border-red-300 bg-red-50"
+                        : "border-gray-300"
                     }`}
                     placeholder="Confirm your password"
                     disabled={isLoading}
@@ -292,14 +316,20 @@ export default function AuthPage() {
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    className="absolute text-gray-400 transform -translate-y-1/2 right-3 top-1/2 hover:text-gray-600"
                     disabled={isLoading}
                   >
-                    {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    {showConfirmPassword ? (
+                      <EyeOff size={18} />
+                    ) : (
+                      <Eye size={18} />
+                    )}
                   </button>
                 </div>
                 {errors.confirmPassword && (
-                  <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>
+                  <p className="mt-1 text-sm text-red-600">
+                    {errors.confirmPassword}
+                  </p>
                 )}
               </div>
             )}
@@ -309,7 +339,7 @@ export default function AuthPage() {
               <div className="text-right">
                 <button
                   type="button"
-                  className="text-sm text-emerald-600 hover:text-emerald-700 transition-colors"
+                  className="text-sm transition-colors text-emerald-600 hover:text-emerald-700"
                   disabled={isLoading}
                 >
                   Forgot your password?
@@ -323,23 +353,27 @@ export default function AuthPage() {
               disabled={isLoading}
               className={`w-full py-3 rounded-lg font-semibold transition-all duration-200 ${
                 isLoading
-                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-emerald-500 to-blue-500 text-white hover:shadow-lg hover:scale-[1.02]'
+                  ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  : "bg-gradient-to-r from-emerald-500 to-blue-500 text-white hover:shadow-lg hover:scale-[1.02]"
               }`}
             >
               {isLoading ? (
                 <div className="flex items-center justify-center space-x-2">
-                  <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
-                  <span>{isSignUp ? 'Creating Account...' : 'Signing In...'}</span>
+                  <div className="w-4 h-4 border-2 border-gray-400 rounded-full border-t-transparent animate-spin"></div>
+                  <span>
+                    {isSignUp ? "Creating Account..." : "Signing In..."}
+                  </span>
                 </div>
+              ) : isSignUp ? (
+                "Create Account"
               ) : (
-                isSignUp ? 'Create Account' : 'Sign In'
+                "Sign In"
               )}
             </button>
           </form>
 
           {/* Divider */}
-          <div className="my-6 flex items-center">
+          <div className="flex items-center my-6">
             <div className="flex-1 border-t border-gray-300"></div>
             <span className="px-4 text-sm text-gray-500">or</span>
             <div className="flex-1 border-t border-gray-300"></div>
@@ -351,19 +385,29 @@ export default function AuthPage() {
             onClick={handleGoogleSignIn}
             disabled={isLoading}
             className={`w-full py-3 px-4 border border-gray-300 rounded-lg transition-colors flex items-center justify-center space-x-2 ${
-              isLoading 
-                ? 'bg-gray-50 cursor-not-allowed' 
-                : 'hover:bg-gray-50'
+              isLoading ? "bg-gray-50 cursor-not-allowed" : "hover:bg-gray-50"
             }`}
           >
             {isLoading ? (
-              <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+              <div className="w-5 h-5 border-2 border-gray-400 rounded-full border-t-transparent animate-spin"></div>
             ) : (
               <svg className="w-5 h-5" viewBox="0 0 24 24">
-                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                <path
+                  fill="#4285F4"
+                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                />
+                <path
+                  fill="#34A853"
+                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                />
+                <path
+                  fill="#FBBC05"
+                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                />
+                <path
+                  fill="#EA4335"
+                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                />
               </svg>
             )}
             <span>Continue with Google</span>
@@ -372,14 +416,14 @@ export default function AuthPage() {
           {/* Toggle Auth Mode */}
           <div className="mt-6 text-center">
             <p className="text-gray-600">
-              {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
+              {isSignUp ? "Already have an account?" : "Don't have an account?"}{" "}
               <button
                 type="button"
                 onClick={toggleAuthMode}
-                className="text-emerald-600 hover:text-emerald-700 font-semibold transition-colors"
+                className="font-semibold transition-colors text-emerald-600 hover:text-emerald-700"
                 disabled={isLoading}
               >
-                {isSignUp ? 'Sign In' : 'Sign Up'}
+                {isSignUp ? "Sign In" : "Sign Up"}
               </button>
             </p>
           </div>
@@ -387,12 +431,12 @@ export default function AuthPage() {
 
         {/* Terms and Privacy (Sign Up Only) */}
         {isSignUp && (
-          <div className="mt-6 text-center text-xs text-gray-500">
-            By creating an account, you agree to our{' '}
+          <div className="mt-6 text-xs text-center text-gray-500">
+            By creating an account, you agree to our{" "}
             <Link href="#" className="text-emerald-600 hover:text-emerald-700">
               Terms of Service
-            </Link>{' '}
-            and{' '}
+            </Link>{" "}
+            and{" "}
             <Link href="#" className="text-emerald-600 hover:text-emerald-700">
               Privacy Policy
             </Link>
