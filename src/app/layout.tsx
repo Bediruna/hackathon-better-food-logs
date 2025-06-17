@@ -95,7 +95,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
                       className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-emerald-500 to-blue-500 text-white rounded-lg hover:shadow-lg transition-all duration-200"
                     >
                       <User size={16} />
-                      <span className="text-sm">Sign In</span>
+                      <span className="text-sm">Sign In / Up</span>
                     </Link>
                   )}
                 </>
