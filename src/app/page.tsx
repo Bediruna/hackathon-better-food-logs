@@ -16,10 +16,15 @@ export default function Home() {
   const [selectedFood, setSelectedFood] = useState<Food | null>(null);
 
   useEffect(() => {
-    // Load foods from localStorage, or initialize with sample data
+    // Add a version to your sampleFoods
+    const SAMPLE_FOODS_VERSION = "v1"; // Increment this when you update sampleFoods
+
+    const storedVersion = localStorage.getItem("sampleFoodsVersion");
     let storedFoods = localStorageUtils.getFoods();
-    if (storedFoods.length === 0) {
+
+    if (storedFoods.length === 0 || storedVersion !== SAMPLE_FOODS_VERSION) {
       localStorageUtils.saveFoods(sampleFoods);
+      localStorage.setItem("sampleFoodsVersion", SAMPLE_FOODS_VERSION);
       storedFoods = sampleFoods;
     }
     setFoods(storedFoods);
