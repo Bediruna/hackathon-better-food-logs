@@ -8,11 +8,13 @@ interface EditFoodLogModalProps {
   onCancel: () => void;
 }
 
+
 export default function EditFoodLogModal({ log, onSave, onCancel }: EditFoodLogModalProps) {
   const [servings, setServings] = useState(log.servingsConsumed);
 
   const adjustServings = (delta: number) => {
     setServings(prev => {
+
       const next = Math.max(0.25, Math.round((prev + delta) * 100) / 100);
       return next;
     });
@@ -41,7 +43,9 @@ export default function EditFoodLogModal({ log, onSave, onCancel }: EditFoodLogM
       <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 w-full max-w-md animate-in slide-in-from-bottom-4 duration-300">
         <div className="flex justify-between items-start mb-4">
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">Edit Food Log</h3>
+            <h3 className="text-lg font-semibold text-gray-900">
+              Edit Food Log
+            </h3>
             <p className="text-sm text-gray-500">
               {new Date(log.consumedDate).toLocaleDateString()}
             </p>
@@ -59,7 +63,9 @@ export default function EditFoodLogModal({ log, onSave, onCancel }: EditFoodLogM
           {log.food?.brandName && (
             <p className="text-gray-600">{log.food.brandName}</p>
           )}
-          <p className="text-sm text-gray-500">{log.food?.servingDescription}</p>
+          <p className="text-sm text-gray-500">
+            {log.food?.servingDescription}
+          </p>
         </div>
 
         <div className="bg-gray-50 rounded-lg p-4 mb-4">
@@ -110,8 +116,12 @@ export default function EditFoodLogModal({ log, onSave, onCancel }: EditFoodLogM
         </div>
 
         <div className="text-center mb-4">
-          <p className="text-2xl font-bold text-emerald-600">{totalCalories} calories</p>
-          <p className="text-gray-500">Total for {servings} serving{servings !== 1 ? 's' : ''}</p>
+          <p className="text-2xl font-bold text-emerald-600">
+            {totalCalories} calories
+          </p>
+          <p className="text-gray-500">
+            Total for {servings} serving{servings !== 1 ? "s" : ""}
+          </p>
         </div>
 
         <div className="flex space-x-3">

@@ -1,7 +1,15 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Calendar, TrendingUp, Target, Award, Edit, Trash2, Plus } from "lucide-react";
+import {
+  Calendar,
+  TrendingUp,
+  Target,
+  Award,
+  Edit,
+  Trash2,
+  Plus,
+} from "lucide-react";
 import { format, subDays, startOfDay, endOfDay } from "date-fns";
 import { FoodLog } from "@/types";
 import { localStorageUtils } from "@/utils/localStorage";
@@ -50,42 +58,42 @@ export default function ReportsPage() {
   }, []);
 
   const handleEditLog = async (logId: number, newServings: number) => {
-    if (isLoggedIn) {
-      const updatedLog = await supabaseUtils.updateFoodLog(logId, newServings);
-      if (updatedLog) {
-        setFoodLogs(prev => prev.map(log => 
-          log.id === logId 
-            ? { ...log, servingsConsumed: newServings }
-            : log
-        ));
-      }
-    } else {
-      const success = localStorageUtils.updateFoodLog(logId, newServings);
-      if (success) {
-        setFoodLogs(prev => prev.map(log => 
-          log.id === logId 
-            ? { ...log, servingsConsumed: newServings }
-            : log
-        ));
-      }
+  if (isLoggedIn) {
+    const updatedLog = await supabaseUtils.updateFoodLog(logId, newServings);
+    if (updatedLog) {
+      setFoodLogs((prev) =>
+        prev.map((log) =>
+          log.id === logId ? { ...log, servingsConsumed: newServings } : log
+        )
+      );
     }
-    setEditingLog(null);
-  };
-
+  } else {
+    const success = localStorageUtils.updateFoodLog(logId, newServings);
+    if (success) {
+      setFoodLogs((prev) =>
+        prev.map((log) =>
+          log.id === logId ? { ...log, servingsConsumed: newServings } : log
+        )
+      );
+    }
+  }
+  setEditingLog(null);
+};
+    
   const handleDeleteLog = async (logId: number) => {
-    if (isLoggedIn) {
-      const success = await supabaseUtils.deleteFoodLog(logId);
-      if (success) {
-        setFoodLogs(prev => prev.filter(log => log.id !== logId));
-      }
-    } else {
-      const success = localStorageUtils.deleteFoodLog(logId);
-      if (success) {
-        setFoodLogs(prev => prev.filter(log => log.id !== logId));
-      }
+  if (isLoggedIn) {
+    const success = await supabaseUtils.deleteFoodLog(logId);
+    if (success) {
+      setFoodLogs((prev) => prev.filter((log) => log.id !== logId));
     }
-    setDeletingLog(null);
-  };
+  } else {
+    const success = localStorageUtils.deleteFoodLog(logId);
+    if (success) {
+      setFoodLogs((prev) => prev.filter((log) => log.id !== logId));
+    }
+  }
+  setDeletingLog(null);
+};
 
   const getPeriodLogs = (days: number) => {
     const endDate = endOfDay(new Date());
@@ -236,17 +244,17 @@ export default function ReportsPage() {
                       className="flex items-center justify-between p-3 bg-gray-50 rounded-lg group hover:bg-gray-100 transition-colors"
                     >
                       <div className="flex-1">
-                        <div className="flex items-center space-x-2">
-                          <h4 className="font-medium text-gray-900">{log.food?.name}</h4>
-                          {log.food?.brandName && (
-                            <span className="text-sm text-gray-500">({log.food.brandName})</span>
-                          )}
-                        </div>
-                        <p className="text-xs text-gray-500">
-                          {log.servingsConsumed} serving{log.servingsConsumed !== 1 ? 's' : ''} • {' '}
-                          {Math.round((log.food?.calories || 0) * log.servingsConsumed)} cal
-                        </p>
-                      </div>
+  <div className="flex items-center space-x-2">
+    <h4 className="font-medium text-gray-900">{log.food?.name}</h4>
+    {log.food?.brandName && (
+      <span className="text-sm text-gray-500">({log.food.brandName})</span>
+    )}
+  </div>
+  <p className="text-xs text-gray-500">
+    {log.servingsConsumed} serving{log.servingsConsumed !== 1 ? "s" : ""} •{" "}
+    {Math.round((log.food?.calories || 0) * log.servingsConsumed)} cal
+  </p>
+</div>
                       <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
                           onClick={() => setEditingLog(log)}

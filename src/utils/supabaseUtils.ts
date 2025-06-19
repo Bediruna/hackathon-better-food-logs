@@ -68,7 +68,7 @@ export const supabaseUtils = {
     return data;
   },
 
-  async updateFoodLog(logId: number, servingsConsumed: number): Promise<FoodLog | null> {
+async updateFoodLog(logId: number, servingsConsumed: number): Promise<FoodLog | null> {
     const { data, error } = await supabase
       .from("food_logs")
       .update({ servings_consumed: servingsConsumed })
@@ -83,10 +83,7 @@ export const supabaseUtils = {
   },
 
   async deleteFoodLog(logId: number): Promise<boolean> {
-    const { error } = await supabase
-      .from("food_logs")
-      .delete()
-      .eq("id", logId);
+const { error } = await supabase.from("food_logs").delete().eq("id", logId);
     if (error) {
       console.error("Error deleting food log:", error);
       return false;
