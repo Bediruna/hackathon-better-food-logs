@@ -1,7 +1,7 @@
-import { Food, FoodLog } from '../types';
+import { Food, FoodLog } from "../types";
 
-const FOODS_KEY = 'better_food_logs_foods';
-const LOGS_KEY = 'better_food_logs_logs';
+const FOODS_KEY = "better_food_logs_foods";
+const LOGS_KEY = "better_food_logs_logs";
 
 export const localStorageUtils = {
   // Foods
@@ -38,7 +38,7 @@ export const localStorageUtils = {
     localStorage.setItem(LOGS_KEY, JSON.stringify(logs));
   },
 
-  addFoodLog(log: Omit<FoodLog, 'id'>): void {
+  addFoodLog(log: Omit<FoodLog, "id">): void {
     const logs = this.getFoodLogs();
     const newLog: FoodLog = {
       ...log,
@@ -46,6 +46,27 @@ export const localStorageUtils = {
     };
     logs.push(newLog);
     this.saveFoodLogs(logs);
+  },
+
+  updateFoodLog(logId: number, servingsConsumed: number): boolean {
+    const logs = this.getFoodLogs();
+    const logIndex = logs.findIndex((log) => log.id === logId);
+    if (logIndex !== -1) {
+      logs[logIndex].servingsConsumed = servingsConsumed;
+      this.saveFoodLogs(logs);
+      return true;
+    }
+    return false;
+  },
+
+  deleteFoodLog(logId: number): boolean {
+    const logs = this.getFoodLogs();
+    const filteredLogs = logs.filter((log) => log.id !== logId);
+    if (filteredLogs.length !== logs.length) {
+      this.saveFoodLogs(filteredLogs);
+      return true;
+    }
+    return false;
   },
 
   // Clear all data
