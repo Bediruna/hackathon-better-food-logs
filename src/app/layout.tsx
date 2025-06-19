@@ -17,8 +17,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Better Food Logs - Track Your Nutrition",
-  description:
-    "Log your meals instantly with smart search. Track nutrition, create custom food records, and monitor your progress.",
+  description: "Log your meals instantly with smart search. Track nutrition, create custom food records, and monitor your progress.",
 };
 
 export default function RootLayout({

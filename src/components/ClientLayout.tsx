@@ -19,15 +19,15 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
   ];
 
   const location = usePathname();
-  const isAuthPage = location === "/auth";
+const isAuthPage = location === "/auth";
 
-  const handleLogout = async () => {
-    try {
-      await logout();
-    } catch (error) {
-      console.error("Error signing out:", error);
-    }
-  };
+const handleLogout = async () => {
+  try {
+    await logout();
+  } catch (error) {
+    console.error("Error signing out:", error);
+  }
+};
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-blue-50">
@@ -52,9 +52,9 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
                       <div className="flex items-center space-x-2">
                         <div className="w-8 h-8 bg-gradient-to-r from-emerald-500 to-blue-500 rounded-full flex items-center justify-center">
                           <span className="text-white text-sm font-semibold">
-                            {user.displayName?.charAt(0) ||
-                              user.email?.charAt(0) ||
-                              "U"}
+{user.displayName?.charAt(0) ||
+  user.email?.charAt(0) ||
+  "U"}
                           </span>
                         </div>
                         <span className="text-sm text-gray-700 hidden sm:block">
@@ -66,9 +66,7 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
                         className="flex items-center space-x-1 px-3 py-2 text-gray-600 hover:text-gray-900 transition-colors"
                       >
                         <LogOut size={16} />
-                        <span className="text-sm hidden sm:block">
-                          Sign Out
-                        </span>
+                      <span className="text-sm hidden sm:block">Sign Out</span>
                       </button>
                     </div>
                   ) : (

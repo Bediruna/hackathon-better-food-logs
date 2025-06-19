@@ -50,7 +50,7 @@ export const localStorageUtils = {
 
   updateFoodLog(logId: number, servingsConsumed: number): boolean {
     const logs = this.getFoodLogs();
-    const logIndex = logs.findIndex((log) => log.id === logId);
+const logIndex = logs.findIndex((log) => log.id === logId);
     if (logIndex !== -1) {
       logs[logIndex].servingsConsumed = servingsConsumed;
       this.saveFoodLogs(logs);
@@ -61,7 +61,7 @@ export const localStorageUtils = {
 
   deleteFoodLog(logId: number): boolean {
     const logs = this.getFoodLogs();
-    const filteredLogs = logs.filter((log) => log.id !== logId);
+const filteredLogs = logs.filter((log) => log.id !== logId);
     if (filteredLogs.length !== logs.length) {
       this.saveFoodLogs(filteredLogs);
       return true;

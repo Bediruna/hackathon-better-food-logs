@@ -1,18 +1,13 @@
-import React from "react";
-import { X, Trash2, AlertTriangle } from "lucide-react";
-import { FoodLog } from "@/types";
-
+import React from 'react';
+import { X, Trash2, AlertTriangle } from 'lucide-react';
+import { FoodLog } from '@/types';
 interface DeleteConfirmModalProps {
   log: FoodLog;
   onConfirm: (logId: number) => void;
   onCancel: () => void;
 }
 
-export default function DeleteConfirmModal({
-  log,
-  onConfirm,
-  onCancel,
-}: DeleteConfirmModalProps) {
+export default function DeleteConfirmModal({ log, onConfirm, onCancel }: DeleteConfirmModalProps) {
   const handleConfirm = () => {
     onConfirm(log.id);
   };
@@ -26,7 +21,7 @@ export default function DeleteConfirmModal({
               <AlertTriangle className="text-red-600" size={20} />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">
+            <h3 className="text-lg font-semibold text-gray-900">
                 Delete Food Log
               </h3>
               <p className="text-sm text-gray-500">
@@ -57,8 +52,7 @@ export default function DeleteConfirmModal({
             </div>
             <div className="text-right">
               <p className="text-sm font-semibold text-emerald-600">
-                {Math.round((log.food?.calories || 0) * log.servingsConsumed)}{" "}
-                cal
+          {Math.round((log.food?.calories || 0) * log.servingsConsumed)}{" "}cal
               </p>
             </div>
           </div>
