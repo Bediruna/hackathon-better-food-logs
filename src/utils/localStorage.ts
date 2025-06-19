@@ -48,6 +48,27 @@ export const localStorageUtils = {
     this.saveFoodLogs(logs);
   },
 
+  updateFoodLog(logId: number, servingsConsumed: number): boolean {
+    const logs = this.getFoodLogs();
+    const logIndex = logs.findIndex(log => log.id === logId);
+    if (logIndex !== -1) {
+      logs[logIndex].servingsConsumed = servingsConsumed;
+      this.saveFoodLogs(logs);
+      return true;
+    }
+    return false;
+  },
+
+  deleteFoodLog(logId: number): boolean {
+    const logs = this.getFoodLogs();
+    const filteredLogs = logs.filter(log => log.id !== logId);
+    if (filteredLogs.length !== logs.length) {
+      this.saveFoodLogs(filteredLogs);
+      return true;
+    }
+    return false;
+  },
+
   // Clear all data
   clearAll(): void {
     localStorage.removeItem(FOODS_KEY);
