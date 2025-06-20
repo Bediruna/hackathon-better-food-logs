@@ -6,9 +6,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 
-export default function AuthPage() {
-  const router = useRouter();
-  const { user, signIn, signUp, signInWithGoogle } = useAuth();
+export default function AuthPage() {  const router = useRouter();
+  const { user, signIn, signUp, signInWithGoogle } = useAuth(); // Keep signInWithGoogle to maintain interface compatibility
   const [isSignUp, setIsSignUp] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -106,9 +105,10 @@ export default function AuthPage() {
       setErrors({ general: errorMessage });
     } finally {
       setIsLoading(false);
-    }
-  };
+    }  };
 
+  // Commented out Google sign-in handler since Google auth is disabled for now
+  /*
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     setErrors({});
@@ -138,6 +138,7 @@ export default function AuthPage() {
       setIsLoading(false);
     }
   };
+  */
 
   const toggleAuthMode = () => {
     setIsSignUp(!isSignUp);
@@ -365,21 +366,19 @@ export default function AuthPage() {
                   </span>
                 </div>
               ) : isSignUp ? (
-                "Create Account"
-              ) : (
+                "Create Account"              ) : (
                 "Sign In"
               )}
-            </button>
-          </form>
+            </button>          </form>
 
-          {/* Divider */}
+          {/* Google Auth section temporarily disabled */}
+          {/*
           <div className="flex items-center my-6">
             <div className="flex-1 border-t border-gray-300"></div>
             <span className="px-4 text-sm text-gray-500">or</span>
             <div className="flex-1 border-t border-gray-300"></div>
           </div>
 
-          {/* Google Sign In */}
           <button
             type="button"
             onClick={handleGoogleSignIn}
@@ -412,6 +411,7 @@ export default function AuthPage() {
             )}
             <span>Continue with Google</span>
           </button>
+          */}
 
           {/* Toggle Auth Mode */}
           <div className="mt-6 text-center">
