@@ -49,16 +49,15 @@ const handleLogout = async () => {
                 <>
                   {user ? (
                     <div className="flex items-center space-x-3">
-                      <div className="flex items-center space-x-2">
-                        <div className="w-8 h-8 bg-gradient-to-r from-emerald-500 to-blue-500 rounded-full flex items-center justify-center">
+                      <div className="flex items-center space-x-2">                        <div className="w-8 h-8 bg-gradient-to-r from-emerald-500 to-blue-500 rounded-full flex items-center justify-center">
                           <span className="text-white text-sm font-semibold">
-{user.displayName?.charAt(0) ||
+{user.user_metadata?.full_name?.charAt(0) ||
   user.email?.charAt(0) ||
   "U"}
                           </span>
                         </div>
                         <span className="text-sm text-gray-700 hidden sm:block">
-                          {user.displayName || user.email}
+                          {user.user_metadata?.full_name || user.email}
                         </span>
                       </div>
                       <button
