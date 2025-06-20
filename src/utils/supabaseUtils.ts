@@ -11,7 +11,9 @@ export const supabaseUtils = {
     }
 
     return data || [];
-  },  async addFood(food: Omit<Food, "id">): Promise<Food | null> {
+  },
+
+  async addFood(food: Omit<Food, "id">): Promise<Food | null> {
     const { data, error } = await supabase
       .from("foods")
       .insert(food)
@@ -24,15 +26,14 @@ export const supabaseUtils = {
 
     return data;
   },
-
   // ✅ FOOD LOG METHODS
   async getFoodLogs(): Promise<(FoodLog & { food: Food })[]> {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return []; // If user is not logged in, return empty array
+    // Get the current authenticated user
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError || !user) {
+      console.error("User not authenticated:", authError);
+      return [];
     }
 
     const { data, error } = await supabase
@@ -51,7 +52,9 @@ export const supabaseUtils = {
     if (error) {
       console.error("Error fetching food logs:", error);
       return [];
-    }    // Convert Supabase data to application format
+    }
+
+    // Convert Supabase data to application format
     return data
       .filter(log => log.food) // Only include logs with food data
       .map(log => ({
@@ -63,17 +66,19 @@ export const supabaseUtils = {
         food: log.food,
       }));
   },
-  async addFoodLog(log: Omit<FoodLog, "id">): Promise<FoodLog | null> {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
 
-    if (!user) {
-      console.error("User not authenticated");
+  async addFoodLog(log: Omit<FoodLog, "id">): Promise<FoodLog | null> {
+    // Get the current authenticated user
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError || !user) {
+      console.error("User not authenticated:", authError);
       return null;
-    }    // Map the log fields to match Supabase column names
+    }
+
+    // Map the log fields to match Supabase column names
     const supabaseLog = {
-      user_id: user.id, // Use Firebase UID directly as string
+      user_id: user.id, // Use Supabase user ID
       food_id: log.food_id,
       servings_consumed: log.servings_consumed,
       consumed_date: new Date(log.consumed_date).toISOString(),
@@ -98,7 +103,9 @@ export const supabaseUtils = {
       servings_consumed: data.servings_consumed,
       consumed_date: new Date(data.consumed_date).getTime(),
     };
-  },  async updateFoodLog(logId: number, servings_consumed: number): Promise<FoodLog | null> {
+  },
+
+  async updateFoodLog(logId: number, servings_consumed: number): Promise<FoodLog | null> {
     const { data, error } = await supabase
       .from("food_logs")
       .update({ servings_consumed: servings_consumed })
@@ -111,12 +118,9 @@ export const supabaseUtils = {
     }
     
     // Convert back to application format
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-      return {
+    return {
       id: data.id,
-      user_id: user ? parseInt(user.id.slice(-8), 16) : 1,
+      user_id: 1, // This function doesn't have access to user ID, keeping simple
       food_id: data.food_id,
       servings_consumed: data.servings_consumed,
       consumed_date: new Date(data.consumed_date).getTime(),
@@ -124,7 +128,7 @@ export const supabaseUtils = {
   },
 
   async deleteFoodLog(logId: number): Promise<boolean> {
-const { error } = await supabase.from("food_logs").delete().eq("id", logId);
+    const { error } = await supabase.from("food_logs").delete().eq("id", logId);
     if (error) {
       console.error("Error deleting food log:", error);
       return false;

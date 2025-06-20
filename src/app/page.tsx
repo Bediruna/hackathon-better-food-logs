@@ -30,9 +30,7 @@ export default function Home() {
         localStorage.setItem("sampleFoodsVersion", SAMPLE_FOODS_VERSION);
         storedFoods = sampleFoods;
       }
-      setFoods(storedFoods);
-
-      // Load food logs based on authentication status
+      setFoods(storedFoods);      // Load food logs based on authentication status
       if (user) {
         // User is signed in, load from Supabase
         const supabaseLogs = await supabaseUtils.getFoodLogs();
@@ -55,13 +53,12 @@ export default function Home() {
     setSelectedFood(food);
   };  const handleLogFood = async (food: Food, servings: number) => {
     const newLog = {
-      user_id: user?.uid ? parseInt(user.uid.slice(-8), 16) : 1, // Convert Firebase UID to number for app compatibility
+      user_id: user?.id ? parseInt(user.id.slice(-8), 16) : 1, // Convert Supabase user ID to number for app compatibility
       food_id: food.id,
       servings_consumed: servings,
       consumed_date: Date.now(),
     };
-    
-    if (user) {
+      if (user) {
       // User is signed in, save to Supabase
       try {
         const savedLog = await supabaseUtils.addFoodLog(newLog);
@@ -124,7 +121,7 @@ export default function Home() {
       {user && (
         <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
           <p className="text-sm text-green-700">
-            ✅ Signed in as {user.displayName || user.email} - Food logs are being saved to the cloud
+            ✅ Signed in as {user.user_metadata?.full_name || user.email} - Food logs are being saved to the cloud
           </p>
         </div>
       )}

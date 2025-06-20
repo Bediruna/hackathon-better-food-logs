@@ -26,10 +26,8 @@ export default function ReportsPage() {
   );
   const [editingLog, setEditingLog] = useState<FoodLog | null>(null);
   const [deletingLog, setDeletingLog] = useState<FoodLog | null>(null);
-
   useEffect(() => {
-    const fetchLogs = async () => {
-      if (user) {
+    const fetchLogs = async () => {      if (user) {
         const logs = await supabaseUtils.getFoodLogs();
         if (logs.length === 0) {
           console.log("No logs found for your account.");
@@ -138,10 +136,9 @@ export default function ReportsPage() {
       </div>
 
       {/* Authentication Status */}
-      {user && (
-        <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+      {user && (        <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
           <p className="text-sm text-green-700">
-            ✅ Viewing cloud data for {user.displayName || user.email}
+            ✅ Viewing cloud data for {user.user_metadata?.full_name || user.email}
           </p>
         </div>
       )}
