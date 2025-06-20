@@ -1,19 +1,31 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Calendar, TrendingUp, Target, Award } from "lucide-react";
+import {
+  Calendar,
+  TrendingUp,
+  Target,
+  Award,
+  Edit,
+  Trash2,
+} from "lucide-react";
 import { format, subDays, startOfDay, endOfDay } from "date-fns";
 import { FoodLog } from "@/types";
 import { localStorageUtils } from "@/utils/localStorage";
 import { calculateNutritionSummary } from "@/utils/nutrition";
 import { supabaseUtils } from "@/utils/supabaseUtils";
 import { supabase } from "@/lib/supabaseClient";
+import EditFoodLogModal from "@/components/EditFoodLogModal";
+import DeleteConfirmModal from "@/components/DeleteConfirmModal";
 
 export default function ReportsPage() {
   const [foodLogs, setFoodLogs] = useState<FoodLog[]>([]);
   const [selectedPeriod, setSelectedPeriod] = useState<"7days" | "30days">(
     "7days"
   );
+  const [editingLog, setEditingLog] = useState<FoodLog | null>(null);
+  const [deletingLog, setDeletingLog] = useState<FoodLog | null>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
     const fetchLogs = async () => {
@@ -22,12 +34,14 @@ export default function ReportsPage() {
       } = await supabase.auth.getUser();
 
       if (user) {
+        setIsLoggedIn(true);
         const logs = await supabaseUtils.getFoodLogs();
         if (logs.length === 0) {
-          alert("No logs found for your account.");
+          console.log("No logs found for your account.");
         }
         setFoodLogs(logs);
       } else {
+        setIsLoggedIn(false);
         // Not logged in — fallback to localStorage
         const logs = localStorageUtils.getFoodLogs();
         const foods = localStorageUtils.getFoods();
@@ -41,6 +55,44 @@ export default function ReportsPage() {
 
     fetchLogs();
   }, []);
+
+  const handleEditLog = async (logId: number, newServings: number) => {
+  if (isLoggedIn) {
+    const updatedLog = await supabaseUtils.updateFoodLog(logId, newServings);
+    if (updatedLog) {
+      setFoodLogs((prev) =>
+        prev.map((log) =>
+          log.id === logId ? { ...log, servingsConsumed: newServings } : log
+        )
+      );
+    }
+  } else {
+    const success = localStorageUtils.updateFoodLog(logId, newServings);
+    if (success) {
+      setFoodLogs((prev) =>
+        prev.map((log) =>
+          log.id === logId ? { ...log, servingsConsumed: newServings } : log
+        )
+      );
+    }
+  }
+  setEditingLog(null);
+};
+    
+  const handleDeleteLog = async (logId: number) => {
+  if (isLoggedIn) {
+    const success = await supabaseUtils.deleteFoodLog(logId);
+    if (success) {
+      setFoodLogs((prev) => prev.filter((log) => log.id !== logId));
+    }
+  } else {
+    const success = localStorageUtils.deleteFoodLog(logId);
+    if (success) {
+      setFoodLogs((prev) => prev.filter((log) => log.id !== logId));
+    }
+  }
+  setDeletingLog(null);
+};
 
   const getPeriodLogs = (days: number) => {
     const endDate = endOfDay(new Date());
@@ -76,6 +128,7 @@ export default function ReportsPage() {
       date,
       calories: Math.round(daySummary.totalCalories),
       meals: dayLogs.length,
+      logs: dayLogs,
     };
   });
 
@@ -151,32 +204,76 @@ export default function ReportsPage() {
         </div>
       </div>
 
-      {/* Daily Calories Chart */}
+      {/* Daily Calories Chart with Food Logs */}
       <div className="p-6 border border-gray-200 shadow-lg bg-white/80 backdrop-blur-sm rounded-xl">
         <h2 className="mb-4 text-lg font-semibold text-gray-900">
-          Daily Calories
+          Daily Calories & Food Logs
         </h2>
 
-        <div className="space-y-2">
+        <div className="space-y-4">
           {dailyData.map((day, index) => (
-            <div key={index} className="flex items-center space-x-3">
-              <div className="w-16 text-xs text-right text-gray-500">
-                {format(day.date, "MMM d")}
-              </div>
-              <div className="relative flex-1 h-6 overflow-hidden bg-gray-200 rounded-full">
-                <div
-                  className="h-full transition-all duration-300 rounded-full bg-gradient-to-r from-emerald-400 to-emerald-500"
-                  style={{ width: `${(day.calories / maxCalories) * 100}%` }}
-                />
-                <div className="absolute inset-0 flex items-center px-3">
-                  <span className="text-xs font-medium text-gray-700">
-                    {day.calories} cal
-                  </span>
+            <div key={index} className="border border-gray-100 rounded-lg p-4">
+              {/* Day Header with Chart */}
+              <div className="flex items-center space-x-3 mb-3">
+                <div className="w-16 text-sm font-medium text-gray-700">
+                  {format(day.date, "MMM d")}
+                </div>
+                <div className="relative flex-1 h-6 overflow-hidden bg-gray-200 rounded-full">
+                  <div
+                    className="h-full transition-all duration-300 rounded-full bg-gradient-to-r from-emerald-400 to-emerald-500"
+                    style={{ width: `${(day.calories / maxCalories) * 100}%` }}
+                  />
+                  <div className="absolute inset-0 flex items-center px-3">
+                    <span className="text-xs font-medium text-gray-700">
+                      {day.calories} cal
+                    </span>
+                  </div>
+                </div>
+                <div className="w-12 text-xs text-center text-gray-500">
+                  {day.meals} meals
                 </div>
               </div>
-              <div className="w-12 text-xs text-center text-gray-500">
-                {day.meals} meals
-              </div>
+
+              {/* Food Logs for this day */}
+              {day.logs.length > 0 && (
+                <div className="ml-19 space-y-2">
+                  {day.logs.map((log) => (
+                    <div
+                      key={log.id}
+                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg group hover:bg-gray-100 transition-colors"
+                    >
+                      <div className="flex-1">
+  <div className="flex items-center space-x-2">
+    <h4 className="font-medium text-gray-900">{log.food?.name}</h4>
+    {log.food?.brandName && (
+      <span className="text-sm text-gray-500">({log.food.brandName})</span>
+    )}
+  </div>
+  <p className="text-xs text-gray-500">
+    {log.servingsConsumed} serving{log.servingsConsumed !== 1 ? "s" : ""} •{" "}
+    {Math.round((log.food?.calories || 0) * log.servingsConsumed)} cal
+  </p>
+</div>
+                      <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={() => setEditingLog(log)}
+                          className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
+                          title="Edit log"
+                        >
+                          <Edit size={14} />
+                        </button>
+                        <button
+                          onClick={() => setDeletingLog(log)}
+                          className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
+                          title="Delete log"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -246,6 +343,24 @@ export default function ReportsPage() {
             Start logging your meals to see your progress here!
           </p>
         </div>
+      )}
+
+      {/* Edit Modal */}
+      {editingLog && (
+        <EditFoodLogModal
+          log={editingLog}
+          onSave={handleEditLog}
+          onCancel={() => setEditingLog(null)}
+        />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deletingLog && (
+        <DeleteConfirmModal
+          log={deletingLog}
+          onConfirm={handleDeleteLog}
+          onCancel={() => setDeletingLog(null)}
+        />
       )}
     </div>
   );

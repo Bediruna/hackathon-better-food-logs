@@ -68,6 +68,29 @@ export const supabaseUtils = {
     return data;
   },
 
+async updateFoodLog(logId: number, servingsConsumed: number): Promise<FoodLog | null> {
+    const { data, error } = await supabase
+      .from("food_logs")
+      .update({ servings_consumed: servingsConsumed })
+      .eq("id", logId)
+      .select()
+      .single();
+    if (error) {
+      console.error("Error updating food log:", error);
+      return null;
+    }
+    return data;
+  },
+
+  async deleteFoodLog(logId: number): Promise<boolean> {
+const { error } = await supabase.from("food_logs").delete().eq("id", logId);
+    if (error) {
+      console.error("Error deleting food log:", error);
+      return false;
+    }
+    return true;
+  },
+
   // Delete or clear utilities
   async deleteAllFoods() {
     const { error } = await supabase.from("foods").delete().neq("id", "");
