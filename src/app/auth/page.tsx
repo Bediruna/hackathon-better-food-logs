@@ -5,7 +5,7 @@ import { ArrowLeft, Mail, Lock, User, Eye, EyeOff, Zap } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { login as supabaseLogin, signup as supabaseSignup } from "./supabase";
+import { login as supabaseLogin, signup as supabaseSignup } from "./actions";
 
 export default function AuthPage() {
   const router = useRouter();
@@ -81,40 +81,47 @@ export default function AuthPage() {
     setIsLoading(true);
     setErrors({});
 
-    try {
-      if (isSignUp) {
-        // await googleSignUp(formData.email, formData.password, formData.name);
-        await supabaseSignup(formData.email, formData.password, formData.name);
-      } else {
-        await supabaseLogin(formData.email, formData.password);
-        // await googleSignIn(formData.email, formData.password);
-      }
-      router.push("/");
-    } catch (error: unknown) {
-      console.error("Authentication error:", error);
-      // Handle Firebase auth errors
-      let errorMessage = "An error occurred. Please try again.";
-      if (
-        typeof error === "object" &&
-        error !== null &&
-        "code" in error &&
-        typeof (error as { code?: unknown }).code === "string"
-      ) {
-        const code = (error as { code: string }).code;
-        if (code === "auth/user-not-found" || code === "auth/wrong-password") {
-          errorMessage = "Invalid email or password.";
-        } else if (code === "auth/email-already-in-use") {
-          errorMessage = "An account with this email already exists.";
-        } else if (code === "auth/weak-password") {
-          errorMessage = "Password should be at least 6 characters.";
-        } else if (code === "auth/invalid-email") {
-          errorMessage = "Please enter a valid email address.";
-        }
-      }
-      setErrors({ general: errorMessage });
-    } finally {
-      setIsLoading(false);
+
+    if (isSignUp) {
+      await supabaseSignup(formData.email, formData.password, formData.name);
+    } else {
+      await supabaseLogin(formData.email, formData.password);
     }
+    router.push("/");
+
+
+    // try {
+      // if (isSignUp) {
+      //   await supabaseSignup(formData.email, formData.password, formData.name);
+      // } else {
+      //   await supabaseLogin(formData.email, formData.password);
+      // }
+      // router.push("/");
+    // } catch (error: unknown) {
+      // console.error("Authentication error:", error);
+      // Handle supabase errors
+      // let errorMessage = "An error occurred. Please try again.";
+      // if (
+      //   typeof error === "object" &&
+      //   error !== null &&
+      //   "code" in error &&
+      //   typeof (error as { code?: unknown }).code === "string"
+      // ) {
+      //   const code = (error as { code: string }).code;
+      //   if (code === "auth/user-not-found" || code === "auth/wrong-password") {
+      //     errorMessage = "Invalid email or password.";
+      //   } else if (code === "auth/email-already-in-use") {
+      //     errorMessage = "An account with this email already exists.";
+      //   } else if (code === "auth/weak-password") {
+      //     errorMessage = "Password should be at least 6 characters.";
+      //   } else if (code === "auth/invalid-email") {
+      //     errorMessage = "Please enter a valid email address.";
+      //   }
+      // }
+      // setErrors({ general: errorMessage });
+    // } finally {
+      setIsLoading(false);
+    // }
   };
 
   const handleGoogleSignIn = async () => {
