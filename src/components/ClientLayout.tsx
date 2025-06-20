@@ -5,13 +5,27 @@ import Image from "next/image";
 import { BarChart3, Home, User, LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePathname } from "next/navigation";
+import { supabase } from "@/lib/supabaseClient";
 
 interface ClientLayoutProps {
+  supabaseUser?: {
+    id: string;
+    name: string;
+    email: string;
+  };
   children: React.ReactNode;
 }
 
-export default function ClientLayout({ children }: ClientLayoutProps) {
-  const { user, logout, loading } = useAuth();
+export default function ClientLayout({
+  supabaseUser,
+  children,
+}: ClientLayoutProps) {
+  const {
+    user: googleUser,
+    logout: googleLogout,
+    // TODO: Implement loading state for supabase
+    loading: googleLoading,
+  } = useAuth();
 
   const navItems = [
     { path: "/", icon: Home, label: "Home" },
@@ -19,15 +33,30 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
   ];
 
   const location = usePathname();
-const isAuthPage = location === "/auth";
+  const isAuthPage = location === "/auth";
 
-const handleLogout = async () => {
-  try {
-    await logout();
-  } catch (error) {
-    console.error("Error signing out:", error);
-  }
-};
+  const handleLogout = async () => {
+    if (googleUser !== null) {
+      try {
+        await googleLogout();
+      } catch (error) {
+        console.error("Error signing out:", error);
+      }
+    }
+
+    if (supabaseUser !== undefined) {
+      const { error } = await supabase.auth.signOut()
+      if (error !== null) {
+        console.error("Error signing out:", error);
+      }
+    }
+  };
+
+  const user = {
+    id: googleUser?.providerId ?? supabaseUser?.id,
+    name: googleUser?.displayName ?? supabaseUser?.name,
+    email: googleUser?.email ?? supabaseUser?.email,
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-blue-50">
@@ -45,20 +74,20 @@ const handleLogout = async () => {
                 </h1>
               </Link>
 
-              {!loading && (
+              {!googleLoading && (
                 <>
                   {user ? (
                     <div className="flex items-center space-x-3">
                       <div className="flex items-center space-x-2">
                         <div className="w-8 h-8 bg-gradient-to-r from-emerald-500 to-blue-500 rounded-full flex items-center justify-center">
                           <span className="text-white text-sm font-semibold">
-{user.displayName?.charAt(0) ||
-  user.email?.charAt(0) ||
-  "U"}
+                            {user.name?.charAt(0) ||
+                              user.email?.charAt(0) ||
+                              (() => {console.log(user.email);return false;})() || "U"}
                           </span>
                         </div>
                         <span className="text-sm text-gray-700 hidden sm:block">
-                          {user.displayName || user.email}
+                          {user.name || user.email}
                         </span>
                       </div>
                       <button
@@ -66,7 +95,9 @@ const handleLogout = async () => {
                         className="flex items-center space-x-1 px-3 py-2 text-gray-600 hover:text-gray-900 transition-colors"
                       >
                         <LogOut size={16} />
-                      <span className="text-sm hidden sm:block">Sign Out</span>
+                        <span className="text-sm hidden sm:block">
+                          Sign Out
+                        </span>
                       </button>
                     </div>
                   ) : (
