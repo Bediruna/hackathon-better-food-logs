@@ -14,34 +14,28 @@ import { FoodLog } from "@/types";
 import { localStorageUtils } from "@/utils/localStorage";
 import { calculateNutritionSummary } from "@/utils/nutrition";
 import { supabaseUtils } from "@/utils/supabaseUtils";
-import { supabase } from "@/lib/supabaseClient";
+import { useAuth } from "@/contexts/AuthContext";
 import EditFoodLogModal from "@/components/EditFoodLogModal";
 import DeleteConfirmModal from "@/components/DeleteConfirmModal";
 
 export default function ReportsPage() {
+  const { user } = useAuth();
   const [foodLogs, setFoodLogs] = useState<FoodLog[]>([]);
   const [selectedPeriod, setSelectedPeriod] = useState<"7days" | "30days">(
     "7days"
   );
   const [editingLog, setEditingLog] = useState<FoodLog | null>(null);
   const [deletingLog, setDeletingLog] = useState<FoodLog | null>(null);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
     const fetchLogs = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
       if (user) {
-        setIsLoggedIn(true);
         const logs = await supabaseUtils.getFoodLogs();
         if (logs.length === 0) {
           console.log("No logs found for your account.");
         }
         setFoodLogs(logs);
       } else {
-        setIsLoggedIn(false);
         // Not logged in — fallback to localStorage
         const logs = localStorageUtils.getFoodLogs();
         const foods = localStorageUtils.getFoods();
@@ -51,13 +45,11 @@ export default function ReportsPage() {
         }));
         setFoodLogs(logsWithFoodData);
       }
-    };
-
-    fetchLogs();
-  }, []);
+    };    fetchLogs();
+  }, [user]);
 
   const handleEditLog = async (logId: number, newServings: number) => {
-  if (isLoggedIn) {
+  if (user) {
     const updatedLog = await supabaseUtils.updateFoodLog(logId, newServings);
     if (updatedLog) {
       setFoodLogs((prev) =>
@@ -80,7 +72,7 @@ export default function ReportsPage() {
 };
     
   const handleDeleteLog = async (logId: number) => {
-  if (isLoggedIn) {
+  if (user) {
     const success = await supabaseUtils.deleteFoodLog(logId);
     if (success) {
       setFoodLogs((prev) => prev.filter((log) => log.id !== logId));
@@ -148,6 +140,23 @@ export default function ReportsPage() {
           Track your nutrition journey and see your patterns
         </p>
       </div>
+
+      {/* Authentication Status */}
+      {user && (
+        <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+          <p className="text-sm text-green-700">
+            ✅ Viewing cloud data for {user.displayName || user.email}
+          </p>
+        </div>
+      )}
+
+      {!user && (
+        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <p className="text-sm text-blue-700">
+            📱 Viewing local data - Sign in to sync across devices
+          </p>
+        </div>
+      )}
 
       {/* Period Selector */}
       <div className="flex justify-center">

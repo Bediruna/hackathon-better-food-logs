@@ -6,55 +6,89 @@ import TodaysSummary from "@/components/TodaysSummary";
 import { Food, FoodLog } from "@/types";
 import { localStorageUtils } from "@/utils/localStorage";
 import { sampleFoods } from "@/utils/sampleData";
+import { supabaseUtils } from "@/utils/supabaseUtils";
+import { useAuth } from "@/contexts/AuthContext";
 import { Plus, Zap } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
 export default function Home() {
+  const { user } = useAuth();
   const [foods, setFoods] = useState<Food[]>([]);
   const [foodLogs, setFoodLogs] = useState<FoodLog[]>([]);
   const [selectedFood, setSelectedFood] = useState<Food | null>(null);
-
   useEffect(() => {
-    // Add a version to your sampleFoods
-    const SAMPLE_FOODS_VERSION = "v1"; // Increment this when you update sampleFoods
+    const loadData = async () => {
+      // Add a version to your sampleFoods
+      const SAMPLE_FOODS_VERSION = "v1"; // Increment this when you update sampleFoods
 
-    const storedVersion = localStorage.getItem("sampleFoodsVersion");
-    let storedFoods = localStorageUtils.getFoods();
+      const storedVersion = localStorage.getItem("sampleFoodsVersion");
+      let storedFoods = localStorageUtils.getFoods();
 
-    if (storedFoods.length === 0 || storedVersion !== SAMPLE_FOODS_VERSION) {
-      localStorageUtils.saveFoods(sampleFoods);
-      localStorage.setItem("sampleFoodsVersion", SAMPLE_FOODS_VERSION);
-      storedFoods = sampleFoods;
-    }
-    setFoods(storedFoods);
+      if (storedFoods.length === 0 || storedVersion !== SAMPLE_FOODS_VERSION) {
+        localStorageUtils.saveFoods(sampleFoods);
+        localStorage.setItem("sampleFoodsVersion", SAMPLE_FOODS_VERSION);
+        storedFoods = sampleFoods;
+      }
+      setFoods(storedFoods);
 
-    // Load food logs
-    const logs = localStorageUtils.getFoodLogs();
-    const logsWithFoodData = logs.map(log => ({
-      ...log,
-      food: storedFoods.find(food => food.id === log.foodId)
-    }));
-    setFoodLogs(logsWithFoodData);
-  }, []);
+      // Load food logs based on authentication status
+      if (user) {
+        // User is signed in, load from Supabase
+        const supabaseLogs = await supabaseUtils.getFoodLogs();
+        setFoodLogs(supabaseLogs);
+      } else {
+        // User is not signed in, load from localStorage
+        const logs = localStorageUtils.getFoodLogs();
+        const logsWithFoodData = logs.map(log => ({
+          ...log,
+          food: storedFoods.find(food => food.id === log.foodId)
+        }));
+        setFoodLogs(logsWithFoodData);
+      }
+    };
+
+    loadData();
+  }, [user]);
 
   const handleSelectFood = (food: Food) => {
     setSelectedFood(food);
-  };
-
-  const handleLogFood = (food: Food, servings: number) => {
+  };  const handleLogFood = async (food: Food, servings: number) => {
     const newLog = {
-      userId: 1, // Default user for now
+      userId: user?.uid ? parseInt(user.uid.slice(-8), 16) : 1, // Convert Firebase UID to number for app compatibility
       foodId: food.id,
       servingsConsumed: servings,
       consumedDate: Date.now(),
     };
     
-    localStorageUtils.addFoodLog(newLog);
+    if (user) {
+      // User is signed in, save to Supabase
+      try {
+        const savedLog = await supabaseUtils.addFoodLog(newLog);
+        if (savedLog) {
+          // Update state with the saved log including the food data
+          const logWithFood = { ...savedLog, food };
+          setFoodLogs(prev => [logWithFood, ...prev]);
+          console.log("Food log successfully saved to cloud");
+        } else {
+          throw new Error("Failed to save to Supabase");
+        }
+      } catch (error) {
+        console.error("Error saving to Supabase:", error);
+        // Fallback to localStorage on error
+        localStorageUtils.addFoodLog(newLog);
+        const logWithFood = { ...newLog, id: Date.now(), food };
+        setFoodLogs(prev => [logWithFood, ...prev]);
+        console.log("Food log saved locally as fallback");
+      }
+    } else {
+      // User is not signed in, save to localStorage
+      localStorageUtils.addFoodLog(newLog);
+      const logWithFood = { ...newLog, id: Date.now(), food };
+      setFoodLogs(prev => [logWithFood, ...prev]);
+      console.log("Food log saved locally (user not signed in)");
+    }
     
-    // Update state
-    const logWithFood = { ...newLog, id: Date.now(), food };
-    setFoodLogs(prev => [logWithFood, ...prev]);
     setSelectedFood(null);
   };
 
@@ -86,6 +120,15 @@ export default function Home() {
         </p>
       </div>
 
+      {/* Authentication Status */}
+      {user && (
+        <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+          <p className="text-sm text-green-700">
+            ✅ Signed in as {user.displayName || user.email} - Food logs are being saved to the cloud
+          </p>
+        </div>
+      )}
+      
       {/* Search Section */}
       <div className="space-y-4">
         <SearchBar
