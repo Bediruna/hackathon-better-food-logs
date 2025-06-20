@@ -90,12 +90,11 @@ export default function ReportsPage() {
       return logDate >= startDate && logDate <= endDate;
     });
   };
-
   const periodLogs = getPeriodLogs(selectedPeriod === "7days" ? 7 : 30);
   const summary = calculateNutritionSummary(periodLogs);
   const days = selectedPeriod === "7days" ? 7 : 30;
-  const averageCalories = Math.round(summary.total_calories / days);
-  const averageProtein = Math.round(summary.total_protein_g / days);
+  const averageCalories = Math.round((summary.total_calories || 0) / days);
+  const averageProtein = Math.round((summary.total_protein_g || 0) / days);
 
   // Daily breakdown for the chart
   const dailyData = Array.from({ length: days }, (_, i) => {
@@ -195,12 +194,10 @@ export default function ReportsPage() {
           <Award className="mx-auto mb-2" size={24} />
           <p className="text-2xl font-bold">{periodLogs.length}</p>
           <p className="text-sm text-purple-100">Total Meals</p>
-        </div>
-
-        <div className="p-4 text-center text-white bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl">
+        </div>        <div className="p-4 text-center text-white bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl">
           <TrendingUp className="mx-auto mb-2" size={24} />
           <p className="text-2xl font-bold">
-            {Math.round(summary.total_calories)}
+            {Math.round(summary.total_calories || 0)}
           </p>
           <p className="text-sm text-orange-100">Total Calories</p>
         </div>
@@ -286,47 +283,45 @@ export default function ReportsPage() {
         <h2 className="mb-4 text-lg font-semibold text-gray-900">
           Nutrition Breakdown (
           {selectedPeriod === "7days" ? "Last 7 Days" : "Last 30 Days"})
-        </h2>
-
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+        </h2>        <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
           <div className="p-4 text-center rounded-lg bg-gray-50">
             <p className="text-2xl font-bold text-emerald-600">
-              {Math.round(summary.total_protein_g)}g
+              {Math.round(summary.total_protein_g || 0)}g
             </p>
             <p className="text-sm text-gray-600">Total Protein</p>
           </div>
 
           <div className="p-4 text-center rounded-lg bg-gray-50">
             <p className="text-2xl font-bold text-orange-600">
-              {Math.round(summary.total_fat_g)}g
+              {Math.round(summary.total_fat_g || 0)}g
             </p>
             <p className="text-sm text-gray-600">Total Fat</p>
           </div>
 
           <div className="p-4 text-center rounded-lg bg-gray-50">
             <p className="text-2xl font-bold text-purple-600">
-              {Math.round(summary.total_carbs_g)}g
+              {Math.round(summary.total_carbs_g || 0)}g
             </p>
             <p className="text-sm text-gray-600">Total Carbs</p>
           </div>
 
           <div className="p-4 text-center rounded-lg bg-gray-50">
             <p className="text-2xl font-bold text-pink-600">
-              {Math.round(summary.total_sugar_g)}g
+              {Math.round(summary.total_sugar_g || 0)}g
             </p>
             <p className="text-sm text-gray-600">Total Sugar</p>
           </div>
 
           <div className="p-4 text-center rounded-lg bg-gray-50">
             <p className="text-2xl font-bold text-red-600">
-              {Math.round(summary.total_sodium_mg)}mg
+              {Math.round(summary.total_sodium_mg || 0)}mg
             </p>
             <p className="text-sm text-gray-600">Total Sodium</p>
           </div>
 
           <div className="p-4 text-center rounded-lg bg-gray-50">
             <p className="text-2xl font-bold text-yellow-600">
-              {Math.round(summary.total_cholesterol_mg)}mg
+              {Math.round(summary.total_cholesterol_mg || 0)}mg
             </p>
             <p className="text-sm text-gray-600">Total Cholesterol</p>
           </div>
