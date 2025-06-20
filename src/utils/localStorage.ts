@@ -47,12 +47,11 @@ export const localStorageUtils = {
     logs.push(newLog);
     this.saveFoodLogs(logs);
   },
-
-  updateFoodLog(logId: number, servingsConsumed: number): boolean {
+  updateFoodLog(logId: number, servings_consumed: number): boolean {
     const logs = this.getFoodLogs();
-const logIndex = logs.findIndex((log) => log.id === logId);
+    const logIndex = logs.findIndex((log) => log.id === logId);
     if (logIndex !== -1) {
-      logs[logIndex].servingsConsumed = servingsConsumed;
+      logs[logIndex].servings_consumed = servings_consumed;
       this.saveFoodLogs(logs);
       return true;
     }

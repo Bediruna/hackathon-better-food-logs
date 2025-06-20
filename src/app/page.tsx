@@ -42,7 +42,7 @@ export default function Home() {
         const logs = localStorageUtils.getFoodLogs();
         const logsWithFoodData = logs.map(log => ({
           ...log,
-          food: storedFoods.find(food => food.id === log.foodId)
+          food: storedFoods.find(food => food.id === log.food_id)
         }));
         setFoodLogs(logsWithFoodData);
       }
@@ -55,10 +55,10 @@ export default function Home() {
     setSelectedFood(food);
   };  const handleLogFood = async (food: Food, servings: number) => {
     const newLog = {
-      userId: user?.uid ? parseInt(user.uid.slice(-8), 16) : 1, // Convert Firebase UID to number for app compatibility
-      foodId: food.id,
-      servingsConsumed: servings,
-      consumedDate: Date.now(),
+      user_id: user?.uid ? parseInt(user.uid.slice(-8), 16) : 1, // Convert Firebase UID to number for app compatibility
+      food_id: food.id,
+      servings_consumed: servings,
+      consumed_date: Date.now(),
     };
     
     if (user) {
@@ -100,7 +100,7 @@ export default function Home() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const todaysLogs = foodLogs.filter(log => {
-    const logDate = new Date(log.consumedDate);
+    const logDate = new Date(log.consumed_date);
     logDate.setHours(0, 0, 0, 0);
     return logDate.getTime() === today.getTime();
   });

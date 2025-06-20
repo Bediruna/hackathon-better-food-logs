@@ -98,12 +98,10 @@ export const supabaseUtils = {
       servings_consumed: data.servings_consumed,
       consumed_date: new Date(data.consumed_date).getTime(),
     };
-  },
-
-async updateFoodLog(logId: number, servingsConsumed: number): Promise<FoodLog | null> {
+  },  async updateFoodLog(logId: number, servings_consumed: number): Promise<FoodLog | null> {
     const { data, error } = await supabase
       .from("food_logs")
-      .update({ servings_consumed: servingsConsumed })
+      .update({ servings_consumed: servings_consumed })
       .eq("id", logId)
       .select()
       .single();

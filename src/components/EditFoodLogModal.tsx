@@ -10,7 +10,7 @@ interface EditFoodLogModalProps {
 
 
 export default function EditFoodLogModal({ log, onSave, onCancel }: EditFoodLogModalProps) {
-  const [servings, setServings] = useState(log.servingsConsumed);
+  const [servings, setServings] = useState(log.servings_consumed);
 
   const adjustServings = (delta: number) => {
     setServings(prev => {
@@ -47,7 +47,7 @@ export default function EditFoodLogModal({ log, onSave, onCancel }: EditFoodLogM
               Edit Food Log
             </h3>
             <p className="text-sm text-gray-500">
-              {new Date(log.consumedDate).toLocaleDateString()}
+              {new Date(log.consumed_date).toLocaleDateString()}
             </p>
           </div>
           <button
@@ -60,11 +60,11 @@ export default function EditFoodLogModal({ log, onSave, onCancel }: EditFoodLogM
 
         <div className="mb-4">
           <h4 className="font-medium text-gray-900">{log.food?.name}</h4>
-          {log.food?.brandName && (
-            <p className="text-gray-600">{log.food.brandName}</p>
+          {log.food?.brand_name && (
+            <p className="text-gray-600">{log.food.brand_name}</p>
           )}
           <p className="text-sm text-gray-500">
-            {log.food?.servingDescription}
+            {log.food?.serving_description}
           </p>
         </div>
 
@@ -76,15 +76,15 @@ export default function EditFoodLogModal({ log, onSave, onCancel }: EditFoodLogM
             </div>
             <div>
               <span className="text-gray-600">Protein:</span>
-              <span className="ml-2 font-semibold">{log.food?.proteinG}g</span>
+              <span className="ml-2 font-semibold">{log.food?.protein_g}g</span>
             </div>
             <div>
               <span className="text-gray-600">Fat:</span>
-              <span className="ml-2 font-semibold">{log.food?.fatG}g</span>
+              <span className="ml-2 font-semibold">{log.food?.fat_g}g</span>
             </div>
             <div>
               <span className="text-gray-600">Carbs:</span>
-              <span className="ml-2 font-semibold">{log.food?.carbsG}g</span>
+              <span className="ml-2 font-semibold">{log.food?.carbs_g}g</span>
             </div>
           </div>
         </div>

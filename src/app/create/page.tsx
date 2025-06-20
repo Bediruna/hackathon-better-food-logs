@@ -9,20 +9,19 @@ import { supabaseUtils } from "@/utils/supabaseUtils";
 import { supabase } from "@/lib/supabaseClient";
 
 export default function CreateFoodPage() {
-  const router = useRouter();
-  const [formData, setFormData] = useState({
+  const router = useRouter();  const [formData, setFormData] = useState({
     name: "",
-    brandName: "",
-    servingDescription: "",
-    servingMassG: "",
-    servingVolumeMl: "",
+    brand_name: "",
+    serving_description: "",
+    serving_mass_g: "",
+    serving_volume_ml: "",
     calories: "",
-    proteinG: "",
-    fatG: "",
-    carbsG: "",
-    sugarG: "",
-    sodiumMg: "",
-    cholesterolMg: "",
+    protein_g: "",
+    fat_g: "",
+    carbs_g: "",
+    sugar_g: "",
+    sodium_mg: "",
+    cholesterol_mg: "",
   });
 
   const handleInputChange = (field: string, value: string) => {
@@ -30,22 +29,20 @@ export default function CreateFoodPage() {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    const newFood: Food = {
+    e.preventDefault();    const newFood: Food = {
       id: Date.now(),
       name: formData.name,
-      brandName: formData.brandName || undefined,
-      servingDescription: formData.servingDescription,
-      servingMassG: parseFloat(formData.servingMassG) || 0,
-      servingVolumeMl: parseFloat(formData.servingVolumeMl) || 0,
+      brand_name: formData.brand_name || undefined,
+      serving_description: formData.serving_description,
+      serving_mass_g: parseFloat(formData.serving_mass_g) || 0,
+      serving_volume_ml: parseFloat(formData.serving_volume_ml) || 0,
       calories: parseFloat(formData.calories) || 0,
-      proteinG: parseFloat(formData.proteinG) || 0,
-      fatG: parseFloat(formData.fatG) || 0,
-      carbsG: parseFloat(formData.carbsG) || 0,
-      sugarG: parseFloat(formData.sugarG) || 0,
-      sodiumMg: parseFloat(formData.sodiumMg) || 0,
-      cholesterolMg: parseFloat(formData.cholesterolMg) || 0,
+      protein_g: parseFloat(formData.protein_g) || 0,
+      fat_g: parseFloat(formData.fat_g) || 0,
+      carbs_g: parseFloat(formData.carbs_g) || 0,
+      sugar_g: parseFloat(formData.sugar_g) || 0,
+      sodium_mg: parseFloat(formData.sodium_mg) || 0,
+      cholesterol_mg: parseFloat(formData.cholesterol_mg) || 0,
     };
 
     const {
@@ -68,9 +65,8 @@ export default function CreateFoodPage() {
 
     router.push("/");
   };
-
   const isValid =
-    formData.name && formData.servingDescription && formData.calories;
+    formData.name && formData.serving_description && formData.calories;
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -112,11 +108,10 @@ export default function CreateFoodPage() {
             <div>
               <label className="block mb-2 text-sm font-medium text-gray-700">
                 Brand Name
-              </label>
-              <input
+              </label>              <input
                 type="text"
-                value={formData.brandName}
-                onChange={(e) => handleInputChange("brandName", e.target.value)}
+                value={formData.brand_name}
+                onChange={(e) => handleInputChange("brand_name", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                 placeholder="e.g., Chobani"
               />
@@ -134,12 +129,11 @@ export default function CreateFoodPage() {
             <div>
               <label className="block mb-2 text-sm font-medium text-gray-700">
                 Serving Description *
-              </label>
-              <input
+              </label>              <input
                 type="text"
-                value={formData.servingDescription}
+                value={formData.serving_description}
                 onChange={(e) =>
-                  handleInputChange("servingDescription", e.target.value)
+                  handleInputChange("serving_description", e.target.value)
                 }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                 placeholder="e.g., 1 cup (227g)"
@@ -151,13 +145,12 @@ export default function CreateFoodPage() {
               <div>
                 <label className="block mb-2 text-sm font-medium text-gray-700">
                   Mass (grams)
-                </label>
-                <input
+                </label>                <input
                   type="number"
                   step="0.1"
-                  value={formData.servingMassG}
+                  value={formData.serving_mass_g}
                   onChange={(e) =>
-                    handleInputChange("servingMassG", e.target.value)
+                    handleInputChange("serving_mass_g", e.target.value)
                   }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                   placeholder="227"
@@ -167,13 +160,12 @@ export default function CreateFoodPage() {
               <div>
                 <label className="block mb-2 text-sm font-medium text-gray-700">
                   Volume (ml)
-                </label>
-                <input
+                </label>                <input
                   type="number"
                   step="0.1"
-                  value={formData.servingVolumeMl}
+                  value={formData.serving_volume_ml}
                   onChange={(e) =>
-                    handleInputChange("servingVolumeMl", e.target.value)
+                    handleInputChange("serving_volume_ml", e.target.value)
                   }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                   placeholder="240"
@@ -208,12 +200,11 @@ export default function CreateFoodPage() {
             <div>
               <label className="block mb-2 text-sm font-medium text-gray-700">
                 Protein (g)
-              </label>
-              <input
+              </label>              <input
                 type="number"
                 step="0.1"
-                value={formData.proteinG}
-                onChange={(e) => handleInputChange("proteinG", e.target.value)}
+                value={formData.protein_g}
+                onChange={(e) => handleInputChange("protein_g", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                 placeholder="23"
               />
@@ -222,12 +213,11 @@ export default function CreateFoodPage() {
             <div>
               <label className="block mb-2 text-sm font-medium text-gray-700">
                 Fat (g)
-              </label>
-              <input
+              </label>              <input
                 type="number"
                 step="0.1"
-                value={formData.fatG}
-                onChange={(e) => handleInputChange("fatG", e.target.value)}
+                value={formData.fat_g}
+                onChange={(e) => handleInputChange("fat_g", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                 placeholder="0"
               />
@@ -236,12 +226,11 @@ export default function CreateFoodPage() {
             <div>
               <label className="block mb-2 text-sm font-medium text-gray-700">
                 Carbohydrates (g)
-              </label>
-              <input
+              </label>              <input
                 type="number"
                 step="0.1"
-                value={formData.carbsG}
-                onChange={(e) => handleInputChange("carbsG", e.target.value)}
+                value={formData.carbs_g}
+                onChange={(e) => handleInputChange("carbs_g", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                 placeholder="9"
               />
@@ -250,12 +239,11 @@ export default function CreateFoodPage() {
             <div>
               <label className="block mb-2 text-sm font-medium text-gray-700">
                 Sugar (g)
-              </label>
-              <input
+              </label>              <input
                 type="number"
                 step="0.1"
-                value={formData.sugarG}
-                onChange={(e) => handleInputChange("sugarG", e.target.value)}
+                value={formData.sugar_g}
+                onChange={(e) => handleInputChange("sugar_g", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                 placeholder="6"
               />
@@ -264,12 +252,11 @@ export default function CreateFoodPage() {
             <div>
               <label className="block mb-2 text-sm font-medium text-gray-700">
                 Sodium (mg)
-              </label>
-              <input
+              </label>              <input
                 type="number"
                 step="0.1"
-                value={formData.sodiumMg}
-                onChange={(e) => handleInputChange("sodiumMg", e.target.value)}
+                value={formData.sodium_mg}
+                onChange={(e) => handleInputChange("sodium_mg", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                 placeholder="65"
               />
@@ -278,13 +265,12 @@ export default function CreateFoodPage() {
             <div className="md:col-span-2">
               <label className="block mb-2 text-sm font-medium text-gray-700">
                 Cholesterol (mg)
-              </label>
-              <input
+              </label>              <input
                 type="number"
                 step="0.1"
-                value={formData.cholesterolMg}
+                value={formData.cholesterol_mg}
                 onChange={(e) =>
-                  handleInputChange("cholesterolMg", e.target.value)
+                  handleInputChange("cholesterol_mg", e.target.value)
                 }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                 placeholder="10"

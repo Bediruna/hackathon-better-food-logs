@@ -41,33 +41,32 @@ export default function ReportsPage() {
         const foods = localStorageUtils.getFoods();
         const logsWithFoodData = logs.map((log) => ({
           ...log,
-          food: foods.find((food) => food.id === log.foodId),
+          food: foods.find((food) => food.id === log.food_id),
         }));
         setFoodLogs(logsWithFoodData);
       }
     };    fetchLogs();
   }, [user]);
-
   const handleEditLog = async (logId: number, newServings: number) => {
-  if (user) {
-    const updatedLog = await supabaseUtils.updateFoodLog(logId, newServings);
-    if (updatedLog) {
-      setFoodLogs((prev) =>
-        prev.map((log) =>
-          log.id === logId ? { ...log, servingsConsumed: newServings } : log
-        )
-      );
+    if (user) {
+      const updatedLog = await supabaseUtils.updateFoodLog(logId, newServings);
+      if (updatedLog) {
+        setFoodLogs((prev) =>
+          prev.map((log) =>
+            log.id === logId ? { ...log, servings_consumed: newServings } : log
+          )
+        );
+      }
+    } else {
+      const success = localStorageUtils.updateFoodLog(logId, newServings);
+      if (success) {
+        setFoodLogs((prev) =>
+          prev.map((log) =>
+            log.id === logId ? { ...log, servings_consumed: newServings } : log
+          )
+        );
+      }
     }
-  } else {
-    const success = localStorageUtils.updateFoodLog(logId, newServings);
-    if (success) {
-      setFoodLogs((prev) =>
-        prev.map((log) =>
-          log.id === logId ? { ...log, servingsConsumed: newServings } : log
-        )
-      );
-    }
-  }
   setEditingLog(null);
 };
     
@@ -88,10 +87,8 @@ export default function ReportsPage() {
 
   const getPeriodLogs = (days: number) => {
     const endDate = endOfDay(new Date());
-    const startDate = startOfDay(subDays(new Date(), days - 1));
-
-    return foodLogs.filter((log) => {
-      const logDate = new Date(log.consumedDate);
+    const startDate = startOfDay(subDays(new Date(), days - 1));    return foodLogs.filter((log) => {
+      const logDate = new Date(log.consumed_date);
       return logDate >= startDate && logDate <= endDate;
     });
   };
@@ -99,9 +96,8 @@ export default function ReportsPage() {
   const periodLogs = getPeriodLogs(selectedPeriod === "7days" ? 7 : 30);
   const summary = calculateNutritionSummary(periodLogs);
   const days = selectedPeriod === "7days" ? 7 : 30;
-
-  const averageCalories = Math.round(summary.totalCalories / days);
-  const averageProtein = Math.round(summary.totalProteinG / days);
+  const averageCalories = Math.round(summary.total_calories / days);
+  const averageProtein = Math.round(summary.total_protein_g / days);
 
   // Daily breakdown for the chart
   const dailyData = Array.from({ length: days }, (_, i) => {
@@ -110,7 +106,7 @@ export default function ReportsPage() {
     const endDate = endOfDay(date);
 
     const dayLogs = foodLogs.filter((log) => {
-      const logDate = new Date(log.consumedDate);
+      const logDate = new Date(log.consumed_date);
       return logDate >= startDate && logDate <= endDate;
     });
 
@@ -118,7 +114,7 @@ export default function ReportsPage() {
 
     return {
       date,
-      calories: Math.round(daySummary.totalCalories),
+      calories: Math.round(daySummary.total_calories),
       meals: dayLogs.length,
       logs: dayLogs,
     };
@@ -207,7 +203,7 @@ export default function ReportsPage() {
         <div className="p-4 text-center text-white bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl">
           <TrendingUp className="mx-auto mb-2" size={24} />
           <p className="text-2xl font-bold">
-            {Math.round(summary.totalCalories)}
+            {Math.round(summary.total_calories)}
           </p>
           <p className="text-sm text-orange-100">Total Calories</p>
         </div>
@@ -254,13 +250,13 @@ export default function ReportsPage() {
                       <div className="flex-1">
   <div className="flex items-center space-x-2">
     <h4 className="font-medium text-gray-900">{log.food?.name}</h4>
-    {log.food?.brandName && (
-      <span className="text-sm text-gray-500">({log.food.brandName})</span>
+    {log.food?.brand_name && (
+      <span className="text-sm text-gray-500">({log.food.brand_name})</span>
     )}
   </div>
   <p className="text-xs text-gray-500">
-    {log.servingsConsumed} serving{log.servingsConsumed !== 1 ? "s" : ""} •{" "}
-    {Math.round((log.food?.calories || 0) * log.servingsConsumed)} cal
+    {log.servings_consumed} serving{log.servings_consumed !== 1 ? "s" : ""} •{" "}
+    {Math.round((log.food?.calories || 0) * log.servings_consumed)} cal
   </p>
 </div>
                       <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -298,42 +294,42 @@ export default function ReportsPage() {
         <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
           <div className="p-4 text-center rounded-lg bg-gray-50">
             <p className="text-2xl font-bold text-emerald-600">
-              {Math.round(summary.totalProteinG)}g
+              {Math.round(summary.total_protein_g)}g
             </p>
             <p className="text-sm text-gray-600">Total Protein</p>
           </div>
 
           <div className="p-4 text-center rounded-lg bg-gray-50">
             <p className="text-2xl font-bold text-orange-600">
-              {Math.round(summary.totalFatG)}g
+              {Math.round(summary.total_fat_g)}g
             </p>
             <p className="text-sm text-gray-600">Total Fat</p>
           </div>
 
           <div className="p-4 text-center rounded-lg bg-gray-50">
             <p className="text-2xl font-bold text-purple-600">
-              {Math.round(summary.totalCarbsG)}g
+              {Math.round(summary.total_carbs_g)}g
             </p>
             <p className="text-sm text-gray-600">Total Carbs</p>
           </div>
 
           <div className="p-4 text-center rounded-lg bg-gray-50">
             <p className="text-2xl font-bold text-pink-600">
-              {Math.round(summary.totalSugarG)}g
+              {Math.round(summary.total_sugar_g)}g
             </p>
             <p className="text-sm text-gray-600">Total Sugar</p>
           </div>
 
           <div className="p-4 text-center rounded-lg bg-gray-50">
             <p className="text-2xl font-bold text-red-600">
-              {Math.round(summary.totalSodiumMg)}mg
+              {Math.round(summary.total_sodium_mg)}mg
             </p>
             <p className="text-sm text-gray-600">Total Sodium</p>
           </div>
 
           <div className="p-4 text-center rounded-lg bg-gray-50">
             <p className="text-2xl font-bold text-yellow-600">
-              {Math.round(summary.totalCholesterolMg)}mg
+              {Math.round(summary.total_cholesterol_mg)}mg
             </p>
             <p className="text-sm text-gray-600">Total Cholesterol</p>
           </div>

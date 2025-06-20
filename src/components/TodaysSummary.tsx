@@ -11,9 +11,9 @@ export default function TodaysSummary({ todaysLogs }: TodaysSummaryProps) {
   const summary = calculateNutritionSummary(todaysLogs);
 
   const macros = [
-    { label: 'Protein', value: Math.round(summary.totalProteinG), unit: 'g', color: 'text-blue-600' },
-    { label: 'Fat', value: Math.round(summary.totalFatG), unit: 'g', color: 'text-orange-600' },
-    { label: 'Carbs', value: Math.round(summary.totalCarbsG), unit: 'g', color: 'text-purple-600' },
+    { label: 'Protein', value: Math.round(summary.total_protein_g), unit: 'g', color: 'text-blue-600' },
+    { label: 'Fat', value: Math.round(summary.total_fat_g), unit: 'g', color: 'text-orange-600' },
+    { label: 'Carbs', value: Math.round(summary.total_carbs_g), unit: 'g', color: 'text-purple-600' },
   ];
 
   return (
@@ -24,7 +24,7 @@ export default function TodaysSummary({ todaysLogs }: TodaysSummaryProps) {
       </div>
 
       <div className="text-center mb-6">
-        <p className="text-3xl font-bold text-emerald-600">{Math.round(summary.totalCalories)}</p>
+        <p className="text-3xl font-bold text-emerald-600">{Math.round(summary.total_calories)}</p>
         <p className="text-gray-500">calories consumed</p>
       </div>
 
@@ -48,11 +48,11 @@ export default function TodaysSummary({ todaysLogs }: TodaysSummaryProps) {
                 <div>
                   <p className="text-sm font-medium text-gray-900">{log.food?.name}</p>
                   <p className="text-xs text-gray-500">
-                    {log.servingsConsumed} serving{log.servingsConsumed !== 1 ? 's' : ''}
+                    {log.servings_consumed} serving{log.servings_consumed !== 1 ? 's' : ''}
                   </p>
                 </div>
                 <p className="text-sm font-semibold text-emerald-600">
-                  {Math.round((log.food?.calories || 0) * log.servingsConsumed)} cal
+                  {Math.round((log.food?.calories || 0) * log.servings_consumed)} cal
                 </p>
               </div>
             ))}

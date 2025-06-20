@@ -39,20 +39,18 @@ export default function DeleteConfirmModal({ log, onConfirm, onCancel }: DeleteC
 
         <div className="mb-6 p-4 bg-gray-50 rounded-lg">
           <div className="flex justify-between items-start">
-            <div>
-              <h4 className="font-medium text-gray-900">{log.food?.name}</h4>
-              {log.food?.brandName && (
-                <p className="text-sm text-gray-600">{log.food.brandName}</p>
+            <div>              <h4 className="font-medium text-gray-900">{log.food?.name}</h4>
+              {log.food?.brand_name && (
+                <p className="text-sm text-gray-600">{log.food.brand_name}</p>
               )}
               <p className="text-xs text-gray-500">
-                {log.servingsConsumed} serving
-                {log.servingsConsumed !== 1 ? "s" : ""} •{" "}
-                {new Date(log.consumedDate).toLocaleDateString()}
+                {log.servings_consumed} serving
+                {log.servings_consumed !== 1 ? "s" : ""} •{" "}
+                {new Date(log.consumed_date).toLocaleDateString()}
               </p>
             </div>
-            <div className="text-right">
-              <p className="text-sm font-semibold text-emerald-600">
-          {Math.round((log.food?.calories || 0) * log.servingsConsumed)}{" "}cal
+            <div className="text-right">              <p className="text-sm font-semibold text-emerald-600">
+          {Math.round((log.food?.calories || 0) * log.servings_consumed)}{" "}cal
               </p>
             </div>
           </div>
