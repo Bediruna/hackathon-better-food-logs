@@ -8,7 +8,6 @@ import {
   Award,
   Edit,
   Trash2,
-  Plus,
 } from "lucide-react";
 import { format, subDays, startOfDay, endOfDay } from "date-fns";
 import { FoodLog } from "@/types";
