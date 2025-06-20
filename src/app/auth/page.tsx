@@ -7,7 +7,8 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function AuthPage() {  const router = useRouter();
-  const { user, signIn, signUp, signInWithGoogle } = useAuth(); // Keep signInWithGoogle to maintain interface compatibility
+  //const { user, signIn, signUp, signInWithGoogle } = useAuth(); // Keep signInWithGoogle to maintain interface compatibility
+  const { user, signIn, signUp} = useAuth();
   const [isSignUp, setIsSignUp] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
