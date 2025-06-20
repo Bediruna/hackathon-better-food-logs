@@ -5,10 +5,16 @@ import { ArrowLeft, Mail, Lock, User, Eye, EyeOff, Zap } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import { login as supabaseLogin, signup as supabaseSignup } from "./supabase";
 
 export default function AuthPage() {
   const router = useRouter();
-  const { user, signIn, signUp, signInWithGoogle } = useAuth();
+  const {
+    user: googleUser,
+    // signIn: googleSignIn,
+    // signUp: googleSignUp,
+    signInWithGoogle,
+  } = useAuth();
   const [isSignUp, setIsSignUp] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -23,10 +29,10 @@ export default function AuthPage() {
 
   // Redirect if user is already authenticated
   useEffect(() => {
-    if (user) {
+    if (googleUser) {
       router.push("/");
     }
-  }, [user, router]);
+  }, [googleUser, router]);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -77,9 +83,11 @@ export default function AuthPage() {
 
     try {
       if (isSignUp) {
-        await signUp(formData.email, formData.password, formData.name);
+        // await googleSignUp(formData.email, formData.password, formData.name);
+        await supabaseSignup(formData.email, formData.password, formData.name);
       } else {
-        await signIn(formData.email, formData.password);
+        await supabaseLogin(formData.email, formData.password);
+        // await googleSignIn(formData.email, formData.password);
       }
       router.push("/");
     } catch (error: unknown) {
@@ -146,7 +154,7 @@ export default function AuthPage() {
   };
 
   // Don't render if user is authenticated
-  if (user) {
+  if (googleUser) {
     return null;
   }
 

@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 // import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
@@ -7,7 +7,7 @@ import { StrictMode } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { BarChart3, Home, User, LogOut } from "lucide-react";
-import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { GoogleAuthProvider, useAuth } from "@/contexts/AuthContext";
 import { usePathname } from "next/navigation";
 
 const geistSans = Geist({
@@ -28,14 +28,14 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
     { path: "/reports", icon: BarChart3, label: "Reports" },
   ];
 
-  const location = usePathname()
-  const isAuthPage = location === '/auth';
+  const location = usePathname();
+  const isAuthPage = location === "/auth";
 
   const handleLogout = async () => {
     try {
       await logout();
     } catch (error) {
-      console.error('Error signing out:', error);
+      console.error("Error signing out:", error);
     }
   };
 
@@ -62,7 +62,9 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
                       <div className="flex items-center space-x-2">
                         <div className="w-8 h-8 bg-gradient-to-r from-emerald-500 to-blue-500 rounded-full flex items-center justify-center">
                           <span className="text-white text-sm font-semibold">
-                            {user.displayName?.charAt(0) || user.email?.charAt(0) || 'U'}
+                            {user.displayName?.charAt(0) ||
+                              user.email?.charAt(0) ||
+                              "U"}
                           </span>
                         </div>
                         <span className="text-sm text-gray-700 hidden sm:block">
@@ -74,7 +76,9 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
                         className="flex items-center space-x-1 px-3 py-2 text-gray-600 hover:text-gray-900 transition-colors"
                       >
                         <LogOut size={16} />
-                        <span className="text-sm hidden sm:block">Sign Out</span>
+                        <span className="text-sm hidden sm:block">
+                          Sign Out
+                        </span>
                       </button>
                     </div>
                   ) : (
@@ -122,21 +126,22 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
           <div className="max-w-4xl mx-auto px-4">
             <div className="flex justify-around py-2">
               {navItems.map(({ path, icon: Icon, label }) => {
-                console.log(path)
-                return(
-                <Link
-                  key={path}
-                  href={path}
-                  className={`flex flex-col items-center py-2 px-4 transition-all duration-200 ${
-                    location === path
-                      ? "text-emerald-600"
-                      : "text-gray-500 hover:text-emerald-500"
-                  }`}
-                >
-                  <Icon size={20} />
-                  <span className="text-xs mt-1">{label}</span>
-                </Link>
-              )})}
+                console.log(path);
+                return (
+                  <Link
+                    key={path}
+                    href={path}
+                    className={`flex flex-col items-center py-2 px-4 transition-all duration-200 ${
+                      location === path
+                        ? "text-emerald-600"
+                        : "text-gray-500 hover:text-emerald-500"
+                    }`}
+                  >
+                    <Icon size={20} />
+                    <span className="text-xs mt-1">{label}</span>
+                  </Link>
+                );
+              })}
             </div>
           </div>
         </nav>
@@ -169,9 +174,9 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <StrictMode>
-          <AuthProvider>
+          <GoogleAuthProvider>
             <LayoutContent>{children}</LayoutContent>
-          </AuthProvider>
+          </GoogleAuthProvider>
         </StrictMode>
       </body>
     </html>
