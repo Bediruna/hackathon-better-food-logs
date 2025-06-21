@@ -1,10 +1,10 @@
 export interface Food {
-  id: number;
+  id: string;
   name: string;
   brand_name?: string;
   serving_description: string;
-  serving_mass_g: number;
-  serving_volume_ml: number;
+  serving_mass_g: number | null;
+  serving_volume_ml: number | null;
   calories: number;
   protein_g: number;
   fat_g: number;
@@ -15,16 +15,16 @@ export interface Food {
 }
 
 export interface FoodLog {
-  id: number;
-  user_id: number;
-  food_id: number;
+  id: string; // UUID
+  user_id: string; // UUID
+  food_id: string; // UUID
   food?: Food;
   servings_consumed: number;
   consumed_date: number; // Unix timestamp
 }
 
 export interface User {
-  id: number;
+  id: string;
   display_name: string;
   email: string;
   photo_url?: string;

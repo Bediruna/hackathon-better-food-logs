@@ -1,20 +1,22 @@
-import React, { useState } from 'react';
-import { X, Save, Minus, Plus } from 'lucide-react';
-import { FoodLog } from '@/types';
+import React, { useState } from "react";
+import { X, Save, Minus, Plus } from "lucide-react";
+import { FoodLog } from "@/types";
 
 interface EditFoodLogModalProps {
   log: FoodLog;
-  onSave: (logId: number, newServings: number) => void;
+  onSave: (logId: string, newServings: number) => void;
   onCancel: () => void;
 }
 
-
-export default function EditFoodLogModal({ log, onSave, onCancel }: EditFoodLogModalProps) {
+export default function EditFoodLogModal({
+  log,
+  onSave,
+  onCancel,
+}: EditFoodLogModalProps) {
   const [servings, setServings] = useState(log.servings_consumed);
 
   const adjustServings = (delta: number) => {
-    setServings(prev => {
-
+    setServings((prev) => {
       const next = Math.max(0.25, Math.round((prev + delta) * 100) / 100);
       return next;
     });

@@ -27,7 +27,8 @@ export default function ReportsPage() {
   const [editingLog, setEditingLog] = useState<FoodLog | null>(null);
   const [deletingLog, setDeletingLog] = useState<FoodLog | null>(null);
   useEffect(() => {
-    const fetchLogs = async () => {      if (user) {
+    const fetchLogs = async () => {
+      if (user) {
         const logs = await supabaseUtils.getFoodLogs();
         if (logs.length === 0) {
           console.log("No logs found for your account.");
@@ -43,9 +44,11 @@ export default function ReportsPage() {
         }));
         setFoodLogs(logsWithFoodData);
       }
-    };    fetchLogs();
+    };
+    fetchLogs();
   }, [user]);
-  const handleEditLog = async (logId: number, newServings: number) => {
+
+  const handleEditLog = async (logId: string, newServings: number) => {
     if (user) {
       const updatedLog = await supabaseUtils.updateFoodLog(logId, newServings);
       if (updatedLog) {
@@ -65,27 +68,28 @@ export default function ReportsPage() {
         );
       }
     }
-  setEditingLog(null);
-};
-    
-  const handleDeleteLog = async (logId: number) => {
-  if (user) {
-    const success = await supabaseUtils.deleteFoodLog(logId);
-    if (success) {
-      setFoodLogs((prev) => prev.filter((log) => log.id !== logId));
+    setEditingLog(null);
+  };
+
+  const handleDeleteLog = async (logId: string) => {
+    if (user) {
+      const success = await supabaseUtils.deleteFoodLog(logId);
+      if (success) {
+        setFoodLogs((prev) => prev.filter((log) => log.id !== logId));
+      }
+    } else {
+      const success = localStorageUtils.deleteFoodLog(logId);
+      if (success) {
+        setFoodLogs((prev) => prev.filter((log) => log.id !== logId));
+      }
     }
-  } else {
-    const success = localStorageUtils.deleteFoodLog(logId);
-    if (success) {
-      setFoodLogs((prev) => prev.filter((log) => log.id !== logId));
-    }
-  }
-  setDeletingLog(null);
-};
+    setDeletingLog(null);
+  };
 
   const getPeriodLogs = (days: number) => {
     const endDate = endOfDay(new Date());
-    const startDate = startOfDay(subDays(new Date(), days - 1));    return foodLogs.filter((log) => {
+    const startDate = startOfDay(subDays(new Date(), days - 1));
+    return foodLogs.filter((log) => {
       const logDate = new Date(log.consumed_date);
       return logDate >= startDate && logDate <= endDate;
     });
@@ -135,9 +139,11 @@ export default function ReportsPage() {
       </div>
 
       {/* Authentication Status */}
-      {user && (        <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+      {user && (
+        <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
           <p className="text-sm text-green-700">
-            ✅ Viewing cloud data for {user.user_metadata?.full_name || user.email}
+            ✅ Viewing cloud data for{" "}
+            {user.user_metadata?.full_name || user.email}
           </p>
         </div>
       )}
@@ -183,18 +189,17 @@ export default function ReportsPage() {
           <p className="text-2xl font-bold">{averageCalories}</p>
           <p className="text-sm text-emerald-100">Avg Calories/Day</p>
         </div>
-
         <div className="p-4 text-center text-white bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl">
           <Target className="mx-auto mb-2" size={24} />
           <p className="text-2xl font-bold">{averageProtein}g</p>
           <p className="text-sm text-blue-100">Avg Protein/Day</p>
         </div>
-
         <div className="p-4 text-center text-white bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl">
           <Award className="mx-auto mb-2" size={24} />
           <p className="text-2xl font-bold">{periodLogs.length}</p>
           <p className="text-sm text-purple-100">Total Meals</p>
-        </div>        <div className="p-4 text-center text-white bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl">
+        </div>{" "}
+        <div className="p-4 text-center text-white bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl">
           <TrendingUp className="mx-auto mb-2" size={24} />
           <p className="text-2xl font-bold">
             {Math.round(summary.total_calories || 0)}
@@ -242,17 +247,25 @@ export default function ReportsPage() {
                       className="flex items-center justify-between p-3 bg-gray-50 rounded-lg group hover:bg-gray-100 transition-colors"
                     >
                       <div className="flex-1">
-  <div className="flex items-center space-x-2">
-    <h4 className="font-medium text-gray-900">{log.food?.name}</h4>
-    {log.food?.brand_name && (
-      <span className="text-sm text-gray-500">({log.food.brand_name})</span>
-    )}
-  </div>
-  <p className="text-xs text-gray-500">
-    {log.servings_consumed} serving{log.servings_consumed !== 1 ? "s" : ""} •{" "}
-    {Math.round((log.food?.calories || 0) * log.servings_consumed)} cal
-  </p>
-</div>
+                        <div className="flex items-center space-x-2">
+                          <h4 className="font-medium text-gray-900">
+                            {log.food?.name}
+                          </h4>
+                          {log.food?.brand_name && (
+                            <span className="text-sm text-gray-500">
+                              ({log.food.brand_name})
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-500">
+                          {log.servings_consumed} serving
+                          {log.servings_consumed !== 1 ? "s" : ""} •{" "}
+                          {Math.round(
+                            (log.food?.calories || 0) * log.servings_consumed
+                          )}{" "}
+                          cal
+                        </p>
+                      </div>
                       <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
                           onClick={() => setEditingLog(log)}
@@ -283,7 +296,8 @@ export default function ReportsPage() {
         <h2 className="mb-4 text-lg font-semibold text-gray-900">
           Nutrition Breakdown (
           {selectedPeriod === "7days" ? "Last 7 Days" : "Last 30 Days"})
-        </h2>        <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+        </h2>{" "}
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
           <div className="p-4 text-center rounded-lg bg-gray-50">
             <p className="text-2xl font-bold text-emerald-600">
               {Math.round(summary.total_protein_g || 0)}g

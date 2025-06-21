@@ -1,13 +1,17 @@
-import React from 'react';
-import { X, Trash2, AlertTriangle } from 'lucide-react';
-import { FoodLog } from '@/types';
+import React from "react";
+import { X, Trash2, AlertTriangle } from "lucide-react";
+import { FoodLog } from "@/types";
 interface DeleteConfirmModalProps {
   log: FoodLog;
-  onConfirm: (logId: number) => void;
+  onConfirm: (logId: string) => void;
   onCancel: () => void;
 }
 
-export default function DeleteConfirmModal({ log, onConfirm, onCancel }: DeleteConfirmModalProps) {
+export default function DeleteConfirmModal({
+  log,
+  onConfirm,
+  onCancel,
+}: DeleteConfirmModalProps) {
   const handleConfirm = () => {
     onConfirm(log.id);
   };
@@ -21,7 +25,7 @@ export default function DeleteConfirmModal({ log, onConfirm, onCancel }: DeleteC
               <AlertTriangle className="text-red-600" size={20} />
             </div>
             <div>
-            <h3 className="text-lg font-semibold text-gray-900">
+              <h3 className="text-lg font-semibold text-gray-900">
                 Delete Food Log
               </h3>
               <p className="text-sm text-gray-500">
@@ -39,7 +43,9 @@ export default function DeleteConfirmModal({ log, onConfirm, onCancel }: DeleteC
 
         <div className="mb-6 p-4 bg-gray-50 rounded-lg">
           <div className="flex justify-between items-start">
-            <div>              <h4 className="font-medium text-gray-900">{log.food?.name}</h4>
+            <div>
+              {" "}
+              <h4 className="font-medium text-gray-900">{log.food?.name}</h4>
               {log.food?.brand_name && (
                 <p className="text-sm text-gray-600">{log.food.brand_name}</p>
               )}
@@ -49,8 +55,11 @@ export default function DeleteConfirmModal({ log, onConfirm, onCancel }: DeleteC
                 {new Date(log.consumed_date).toLocaleDateString()}
               </p>
             </div>
-            <div className="text-right">              <p className="text-sm font-semibold text-emerald-600">
-          {Math.round((log.food?.calories || 0) * log.servings_consumed)}{" "}cal
+            <div className="text-right">
+              {" "}
+              <p className="text-sm font-semibold text-emerald-600">
+                {Math.round((log.food?.calories || 0) * log.servings_consumed)}{" "}
+                cal
               </p>
             </div>
           </div>

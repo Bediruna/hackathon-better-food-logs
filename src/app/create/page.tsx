@@ -9,7 +9,8 @@ import { supabaseUtils } from "@/utils/supabaseUtils";
 import { supabase } from "@/lib/supabaseClient";
 
 export default function CreateFoodPage() {
-  const router = useRouter();  const [formData, setFormData] = useState({
+  const router = useRouter();
+  const [formData, setFormData] = useState({
     name: "",
     brand_name: "",
     serving_description: "",
@@ -25,17 +26,34 @@ export default function CreateFoodPage() {
   });
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    setFormData((prev) => {
+      const updated = { ...prev, [field]: value };
+
+      if (field === "serving_mass_g" && value) {
+        updated.serving_volume_ml = "";
+      } else if (field === "serving_volume_ml" && value) {
+        updated.serving_mass_g = "";
+      }
+
+      return updated;
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();    const newFood: Food = {
-      id: Date.now(),
+    e.preventDefault();
+
+    const newFood = {
+      id: crypto.randomUUID(), // Generate a unique ID
       name: formData.name,
       brand_name: formData.brand_name || undefined,
       serving_description: formData.serving_description,
-      serving_mass_g: parseFloat(formData.serving_mass_g) || 0,
-      serving_volume_ml: parseFloat(formData.serving_volume_ml) || 0,
+      // Only one of these should be set, the other should be null
+      serving_mass_g: formData.serving_mass_g
+        ? parseFloat(formData.serving_mass_g)
+        : null,
+      serving_volume_ml: formData.serving_volume_ml
+        ? parseFloat(formData.serving_volume_ml)
+        : null,
       calories: parseFloat(formData.calories) || 0,
       protein_g: parseFloat(formData.protein_g) || 0,
       fat_g: parseFloat(formData.fat_g) || 0,
@@ -49,8 +67,14 @@ export default function CreateFoodPage() {
       data: { user },
     } = await supabase.auth.getUser();
 
+    if (!newFood.name.trim() || !newFood.serving_description.trim()) {
+      alert("Please fill in all required fields");
+      return;
+    }
+
     if (user) {
       // User is logged in → save to Supabase
+      console.log("Saving to Supabase:", newFood);
       const { /* id, */ ...foodWithoutId } = newFood;
       const added = await supabaseUtils.addFood(foodWithoutId);      if (!added) {
         console.error("Failed to save to Supabase:", {
@@ -63,13 +87,16 @@ export default function CreateFoodPage() {
       }
     } else {
       // User is not logged in → save to localStorage
-      localStorageUtils.addFood(newFood);
+      localStorageUtils.addFood(newFood as Food);
     }
 
     router.push("/");
   };
+
   const isValid =
-    formData.name && formData.serving_description && formData.calories;
+    !!formData.name.trim() &&
+    !!formData.serving_description.trim() &&
+    !isNaN(parseFloat(formData.calories));
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -111,10 +138,13 @@ export default function CreateFoodPage() {
             <div>
               <label className="block mb-2 text-sm font-medium text-gray-700">
                 Brand Name
-              </label>              <input
+              </label>
+              <input
                 type="text"
                 value={formData.brand_name}
-                onChange={(e) => handleInputChange("brand_name", e.target.value)}
+                onChange={(e) =>
+                  handleInputChange("brand_name", e.target.value)
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                 placeholder="e.g., Chobani"
               />
@@ -132,7 +162,8 @@ export default function CreateFoodPage() {
             <div>
               <label className="block mb-2 text-sm font-medium text-gray-700">
                 Serving Description *
-              </label>              <input
+              </label>
+              <input
                 type="text"
                 value={formData.serving_description}
                 onChange={(e) =>
@@ -148,7 +179,8 @@ export default function CreateFoodPage() {
               <div>
                 <label className="block mb-2 text-sm font-medium text-gray-700">
                   Mass (grams)
-                </label>                <input
+                </label>
+                <input
                   type="number"
                   step="0.1"
                   value={formData.serving_mass_g}
@@ -157,13 +189,15 @@ export default function CreateFoodPage() {
                   }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                   placeholder="227"
+                  disabled={!!formData.serving_volume_ml}
                 />
               </div>
 
               <div>
                 <label className="block mb-2 text-sm font-medium text-gray-700">
                   Volume (ml)
-                </label>                <input
+                </label>
+                <input
                   type="number"
                   step="0.1"
                   value={formData.serving_volume_ml}
@@ -172,6 +206,7 @@ export default function CreateFoodPage() {
                   }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                   placeholder="240"
+                  disabled={!!formData.serving_mass_g}
                 />
               </div>
             </div>
@@ -203,7 +238,8 @@ export default function CreateFoodPage() {
             <div>
               <label className="block mb-2 text-sm font-medium text-gray-700">
                 Protein (g)
-              </label>              <input
+              </label>
+              <input
                 type="number"
                 step="0.1"
                 value={formData.protein_g}
@@ -216,7 +252,8 @@ export default function CreateFoodPage() {
             <div>
               <label className="block mb-2 text-sm font-medium text-gray-700">
                 Fat (g)
-              </label>              <input
+              </label>
+              <input
                 type="number"
                 step="0.1"
                 value={formData.fat_g}
@@ -229,7 +266,8 @@ export default function CreateFoodPage() {
             <div>
               <label className="block mb-2 text-sm font-medium text-gray-700">
                 Carbohydrates (g)
-              </label>              <input
+              </label>
+              <input
                 type="number"
                 step="0.1"
                 value={formData.carbs_g}
@@ -242,7 +280,8 @@ export default function CreateFoodPage() {
             <div>
               <label className="block mb-2 text-sm font-medium text-gray-700">
                 Sugar (g)
-              </label>              <input
+              </label>
+              <input
                 type="number"
                 step="0.1"
                 value={formData.sugar_g}
@@ -255,7 +294,8 @@ export default function CreateFoodPage() {
             <div>
               <label className="block mb-2 text-sm font-medium text-gray-700">
                 Sodium (mg)
-              </label>              <input
+              </label>
+              <input
                 type="number"
                 step="0.1"
                 value={formData.sodium_mg}
@@ -268,7 +308,8 @@ export default function CreateFoodPage() {
             <div className="md:col-span-2">
               <label className="block mb-2 text-sm font-medium text-gray-700">
                 Cholesterol (mg)
-              </label>              <input
+              </label>
+              <input
                 type="number"
                 step="0.1"
                 value={formData.cholesterol_mg}
