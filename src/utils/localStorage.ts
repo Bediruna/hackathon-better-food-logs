@@ -37,8 +37,7 @@ export const localStorageUtils = {
   saveFoodLogs(logs: FoodLog[]): void {
     localStorage.setItem(LOGS_KEY, JSON.stringify(logs));
   },
-
-  addFoodLog(log: Omit<FoodLog, "id">): void {
+  addFoodLog(log: Omit<FoodLog, "id">): FoodLog {
     const logs = this.getFoodLogs();
     const newLog: FoodLog = {
       ...log,
@@ -46,15 +45,20 @@ export const localStorageUtils = {
     };
     logs.push(newLog);
     this.saveFoodLogs(logs);
-  },
-  updateFoodLog(logId: number, servings_consumed: number): boolean {
+    return newLog;
+  },  updateFoodLog(logId: number, servings_consumed: number): boolean {
+    console.log('LocalStorage updateFoodLog called with ID:', logId, 'servings:', servings_consumed);
     const logs = this.getFoodLogs();
+    console.log('Current logs in localStorage:', logs.map(log => ({ id: log.id, servings: log.servings_consumed })));
     const logIndex = logs.findIndex((log) => log.id === logId);
+    console.log('Found log at index:', logIndex);
     if (logIndex !== -1) {
       logs[logIndex].servings_consumed = servings_consumed;
       this.saveFoodLogs(logs);
+      console.log('Successfully updated log in localStorage');
       return true;
     }
+    console.log('Log with ID', logId, 'not found in localStorage');
     return false;
   },
 

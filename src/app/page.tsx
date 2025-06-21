@@ -3,6 +3,8 @@
 import FoodLogEntry from "@/components/FoodLogEntry";
 import SearchBar from "@/components/SearchBar";
 import TodaysSummary from "@/components/TodaysSummary";
+import EditFoodLogModal from "@/components/EditFoodLogModal";
+import DeleteConfirmModal from "@/components/DeleteConfirmModal";
 import { Food, FoodLog } from "@/types";
 import { localStorageUtils } from "@/utils/localStorage";
 import { sampleFoods } from "@/utils/sampleData";
@@ -17,6 +19,8 @@ export default function Home() {
   const [foods, setFoods] = useState<Food[]>([]);
   const [foodLogs, setFoodLogs] = useState<FoodLog[]>([]);
   const [selectedFood, setSelectedFood] = useState<Food | null>(null);
+  const [editingLog, setEditingLog] = useState<FoodLog | null>(null);
+  const [deletingLog, setDeletingLog] = useState<FoodLog | null>(null);
   useEffect(() => {
     const loadData = async () => {
       // Add a version to your sampleFoods
@@ -71,26 +75,121 @@ export default function Home() {
           throw new Error("Failed to save to Supabase");
         }
       } catch (error) {
-        console.error("Error saving to Supabase:", error);
-        // Fallback to localStorage on error
-        localStorageUtils.addFoodLog(newLog);
-        const logWithFood = { ...newLog, id: Date.now(), food };
+        console.error("Error saving to Supabase:", error);        // Fallback to localStorage on error
+        const savedLog = localStorageUtils.addFoodLog(newLog);
+        const logWithFood = { ...savedLog, food };
         setFoodLogs(prev => [logWithFood, ...prev]);
         console.log("Food log saved locally as fallback");
       }
-    } else {
-      // User is not signed in, save to localStorage
-      localStorageUtils.addFoodLog(newLog);
-      const logWithFood = { ...newLog, id: Date.now(), food };
+    } else {      // User is not signed in, save to localStorage
+      const savedLog = localStorageUtils.addFoodLog(newLog);
+      const logWithFood = { ...savedLog, food };
       setFoodLogs(prev => [logWithFood, ...prev]);
       console.log("Food log saved locally (user not signed in)");
     }
     
     setSelectedFood(null);
   };
-
   const handleCancelFoodEntry = () => {
     setSelectedFood(null);
+  };
+  const handleEditLog = (log: FoodLog) => {
+    console.log('Opening edit modal for log:', log);
+    setEditingLog(log);
+  };
+  const handleSaveEditLog = async (logId: number, newServings: number) => {
+    console.log('Attempting to save edit for log ID:', logId, 'new servings:', newServings);
+    
+    if (user) {
+      // User is signed in, update in Supabase
+      try {
+        const updatedLog = await supabaseUtils.updateFoodLog(logId, newServings);
+        if (updatedLog) {
+          setFoodLogs(prev => prev.map(log => 
+            log.id === logId 
+              ? { ...log, servings_consumed: newServings }
+              : log
+          ));
+          console.log("Food log successfully updated in cloud");
+        } else {
+          throw new Error("Failed to update in Supabase");
+        }
+      } catch (error) {
+        console.error("Error updating in Supabase:", error);
+        // Fallback to localStorage
+        const success = localStorageUtils.updateFoodLog(logId, newServings);
+        if (success) {
+          setFoodLogs(prev => prev.map(log => 
+            log.id === logId 
+              ? { ...log, servings_consumed: newServings }
+              : log
+          ));
+          console.log("Food log updated locally as fallback");
+        } else {
+          console.error("Failed to update food log locally");
+        }
+      }
+    } else {
+      // User is not signed in, update in localStorage
+      console.log('Updating in localStorage for log ID:', logId);
+      const success = localStorageUtils.updateFoodLog(logId, newServings);
+      if (success) {
+        setFoodLogs(prev => prev.map(log => 
+          log.id === logId 
+            ? { ...log, servings_consumed: newServings }
+            : log
+        ));
+        console.log("Food log updated locally");
+      } else {
+        console.error("Failed to update food log in localStorage");
+      }
+    }
+    
+    setEditingLog(null);
+  };
+
+  const handleCancelEditLog = () => {
+    setEditingLog(null);
+  };
+
+  const handleDeleteLog = (log: FoodLog) => {
+    setDeletingLog(log);
+  };
+
+  const handleConfirmDeleteLog = async (logId: number) => {
+    if (user) {
+      // User is signed in, delete from Supabase
+      try {
+        const success = await supabaseUtils.deleteFoodLog(logId);
+        if (success) {
+          setFoodLogs(prev => prev.filter(log => log.id !== logId));
+          console.log("Food log successfully deleted from cloud");
+        } else {
+          throw new Error("Failed to delete from Supabase");
+        }
+      } catch (error) {
+        console.error("Error deleting from Supabase:", error);
+        // Fallback to localStorage
+        const success = localStorageUtils.deleteFoodLog(logId);
+        if (success) {
+          setFoodLogs(prev => prev.filter(log => log.id !== logId));
+          console.log("Food log deleted locally as fallback");
+        }
+      }
+    } else {
+      // User is not signed in, delete from localStorage
+      const success = localStorageUtils.deleteFoodLog(logId);
+      if (success) {
+        setFoodLogs(prev => prev.filter(log => log.id !== logId));
+        console.log("Food log deleted locally");
+      }
+    }
+    
+    setDeletingLog(null);
+  };
+
+  const handleCancelDeleteLog = () => {
+    setDeletingLog(null);
   };
 
   // Get today's logs
@@ -143,9 +242,7 @@ export default function Home() {
             <span>Create New Food Record</span>
           </Link>
         </div>
-      </div>
-
-      {/* Food Entry Modal */}
+      </div>      {/* Food Entry Modal */}
       {selectedFood && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
           <div className="w-full max-w-md">
@@ -158,8 +255,28 @@ export default function Home() {
         </div>
       )}
 
-      {/* Today's Summary */}
-      <TodaysSummary todaysLogs={todaysLogs} />
+      {/* Edit Food Log Modal */}
+      {editingLog && (
+        <EditFoodLogModal
+          log={editingLog}
+          onSave={handleSaveEditLog}
+          onCancel={handleCancelEditLog}
+        />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deletingLog && (
+        <DeleteConfirmModal
+          log={deletingLog}
+          onConfirm={handleConfirmDeleteLog}
+          onCancel={handleCancelDeleteLog}
+        />
+      )}{/* Today's Summary */}
+      <TodaysSummary 
+        todaysLogs={todaysLogs} 
+        onEditLog={handleEditLog}
+        onDeleteLog={handleDeleteLog}
+      />
 
       {/* Quick Stats */}
       <div className="grid grid-cols-2 gap-4">

@@ -29,8 +29,8 @@ export default function EditFoodLogModal({ log, onSave, onCancel }: EditFoodLogM
       setServings(0);
     }
   };
-
   const handleSave = () => {
+    console.log('EditFoodLogModal handleSave called with log ID:', log.id, 'servings:', servings);
     if (servings > 0) {
       onSave(log.id, servings);
     }
