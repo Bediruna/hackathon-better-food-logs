@@ -27,15 +27,14 @@ export const supabaseUtils = {
         fullError: error
       });
       return null;
-    }
-
-    return data;
+    }    return data;
   },
+
   // ✅ FOOD LOG METHODS
   async getFoodLogs(): Promise<(FoodLog & { food: Food })[]> {
     // Get the current authenticated user
     const { data: { user }, error: authError } = await supabase.auth.getUser();
-      if (authError || !user) {
+    if (authError || !user) {
       console.error("User not authenticated:", {
         authError,
         user: user?.id || 'null',
@@ -45,38 +44,63 @@ export const supabaseUtils = {
       return [];
     }
 
-    const { data, error } = await supabase
+    // First, get the food logs
+    const { data: foodLogsData, error: logsError } = await supabase
       .from("food_logs")
-      .select(
-        `
-        *,
-        food:foods (
-          id, name, brand_name, serving_description, serving_mass_g, serving_volume_ml,
-          calories, protein_g, fat_g, carbs_g, sugar_g, sodium_mg, cholesterol_mg
-        )
-      `
-      )
-      .eq("user_id", user.id);    if (error) {
+      .select("*")
+      .eq("user_id", user.id);
+
+    if (logsError) {
       console.error("Error fetching food logs:", {
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-        code: error.code,
-        fullError: error
+        message: logsError.message,
+        details: logsError.details,
+        hint: logsError.hint,
+        code: logsError.code,
+        fullError: logsError
       });
       return [];
     }
 
-    // Convert Supabase data to application format
-    return data
-      .filter(log => log.food) // Only include logs with food data
+    if (!foodLogsData || foodLogsData.length === 0) {
+      return [];
+    }
+
+    // Get all unique food IDs from the logs
+    const foodIds = [...new Set(foodLogsData.map(log => log.food_id))];
+
+    // Fetch all foods that are referenced in the logs
+    const { data: foodsData, error: foodsError } = await supabase
+      .from("foods")
+      .select("*")
+      .in("id", foodIds);
+
+    if (foodsError) {
+      console.error("Error fetching foods:", {
+        message: foodsError.message,
+        details: foodsError.details,
+        hint: foodsError.hint,
+        code: foodsError.code,
+        fullError: foodsError
+      });
+      return [];
+    }
+
+    // Create a map of food ID to food data for quick lookup
+    const foodsMap = new Map<number, Food>();
+    (foodsData || []).forEach(food => {
+      foodsMap.set(food.id, food);
+    });
+
+    // Convert Supabase data to application format, including food data
+    return foodLogsData
+      .filter(log => foodsMap.has(log.food_id)) // Only include logs with valid food data
       .map(log => ({
         id: log.id,
         user_id: parseInt(user.id.slice(-8), 16), // Convert for compatibility
         food_id: log.food_id,
         servings_consumed: log.servings_consumed,
         consumed_date: new Date(log.consumed_date).getTime(),
-        food: log.food,
+        food: foodsMap.get(log.food_id)!,
       }));
   },
 
