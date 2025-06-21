@@ -76,9 +76,7 @@ export const supabaseUtils = {
     const { data: foodsData, error: foodsError } = await supabase
       .from("foods")
       .select("*")
-      .in("id", foodIds);
-
-    if (foodsError) {
+      .in("id", foodIds);    if (foodsError) {
       console.error("Error fetching foods:", {
         message: foodsError.message,
         details: foodsError.details,
@@ -89,17 +87,30 @@ export const supabaseUtils = {
       return [];
     }
 
+    // Create a map of food ID to food data for quick lookup
+    const foodsMap = new Map();
+    if (foodsData) {
+      foodsData.forEach((food) => {
+        foodsMap.set(food.id, food);
+      });
+    }
+
     // Convert Supabase data to application format
-    return data
-      .filter((log) => log.food)
-      .map((log) => ({
-        id: log.id as string,
-        user_id: user.id, // Use directly as UUID string
-        food_id: log.food_id as string,
-        servings_consumed: Number(log.servings_consumed),
-        consumed_date: new Date(log.consumed_date).getTime(),
-        food: log.food as Food,
-      })) as (FoodLog & { food: Food })[];
+    return foodLogsData
+      .map((log) => {
+        const food = foodsMap.get(log.food_id);
+        if (!food) return null; // Skip logs where food doesn't exist
+        
+        return {
+          id: log.id as string,
+          user_id: user.id, // Use directly as UUID string
+          food_id: log.food_id as string,
+          servings_consumed: Number(log.servings_consumed),
+          consumed_date: new Date(log.consumed_date).getTime(),
+          food: food as Food,
+        };
+      })
+      .filter((log) => log !== null) as (FoodLog & { food: Food })[];
   },
 
   async addFoodLog(log: Omit<FoodLog, "id" | "food">): Promise<FoodLog | null> {

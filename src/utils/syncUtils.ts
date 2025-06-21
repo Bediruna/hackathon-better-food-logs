@@ -56,9 +56,8 @@ export async function syncLocalStorageToSupabase(userId: string) {
     console.error("Error fetching food logs:", logFetchError.message);
     return;
   }
-
   const existingLogSet = new Set(
-    existingLogs?.map((log) => `${log.food_id}-${log.date}`)
+    existingLogs?.map((log) => `${log.food_id}-${log.consumed_date}`)
   );
 
   const logsToInsert = localLogs
@@ -86,14 +85,13 @@ export async function syncLocalStorageToSupabase(userId: string) {
           servings_consumed: log.servings_consumed,
         };
       }
-    )
-    .filter(
+    )    .filter(
       (
         log
       ): log is {
         user_id: string;
         food_id: string;
-        consumed_date: number;
+        consumed_date: string;
         servings_consumed: number;
       } => Boolean(log)
     );
