@@ -12,7 +12,6 @@ export const supabaseUtils = {
 
     return data || [];
   },
-
   async addFood(food: Omit<Food, "id">): Promise<Food | null> {
     const { data, error } = await supabase
       .from("foods")
@@ -20,7 +19,13 @@ export const supabaseUtils = {
       .select()
       .single();
     if (error) {
-      console.error("Error adding food:", error);
+      console.error("Error adding food:", {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+        fullError: error
+      });
       return null;
     }
 
@@ -30,9 +35,13 @@ export const supabaseUtils = {
   async getFoodLogs(): Promise<(FoodLog & { food: Food })[]> {
     // Get the current authenticated user
     const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
-    if (authError || !user) {
-      console.error("User not authenticated:", authError);
+      if (authError || !user) {
+      console.error("User not authenticated:", {
+        authError,
+        user: user?.id || 'null',
+        errorMessage: authError?.message,
+        timestamp: new Date().toISOString()
+      });
       return [];
     }
 
@@ -47,10 +56,14 @@ export const supabaseUtils = {
         )
       `
       )
-      .eq("user_id", user.id);
-
-    if (error) {
-      console.error("Error fetching food logs:", error);
+      .eq("user_id", user.id);    if (error) {
+      console.error("Error fetching food logs:", {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+        fullError: error
+      });
       return [];
     }
 
@@ -70,9 +83,14 @@ export const supabaseUtils = {
   async addFoodLog(log: Omit<FoodLog, "id">): Promise<FoodLog | null> {
     // Get the current authenticated user
     const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
-    if (authError || !user) {
-      console.error("User not authenticated:", authError);
+      if (authError || !user) {
+      console.error("User not authenticated for addFoodLog:", {
+        authError,
+        user: user?.id || 'null',
+        errorMessage: authError?.message,
+        timestamp: new Date().toISOString(),
+        attemptedLog: log
+      });
       return null;
     }
 
@@ -89,9 +107,15 @@ export const supabaseUtils = {
       .insert(supabaseLog)
       .select()
       .single();
-    
-    if (error) {
-      console.error("Error adding food log:", error);
+      if (error) {
+      console.error("Error adding food log:", {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+        fullError: error,
+        attemptedData: supabaseLog
+      });
       return null;
     }
 
@@ -111,9 +135,16 @@ export const supabaseUtils = {
       .update({ servings_consumed: servings_consumed })
       .eq("id", logId)
       .select()
-      .single();
-    if (error) {
-      console.error("Error updating food log:", error);
+      .single();    if (error) {
+      console.error("Error updating food log:", {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+        fullError: error,
+        logId,
+        servings_consumed
+      });
       return null;
     }
     
@@ -126,11 +157,17 @@ export const supabaseUtils = {
       consumed_date: new Date(data.consumed_date).getTime(),
     };
   },
-
   async deleteFoodLog(logId: number): Promise<boolean> {
     const { error } = await supabase.from("food_logs").delete().eq("id", logId);
     if (error) {
-      console.error("Error deleting food log:", error);
+      console.error("Error deleting food log:", {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+        fullError: error,
+        logId
+      });
       return false;
     }
     return true;

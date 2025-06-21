@@ -73,9 +73,13 @@ export default function Home() {
           console.log("Food log successfully saved to cloud");
         } else {
           throw new Error("Failed to save to Supabase");
-        }
-      } catch (error) {
-        console.error("Error saving to Supabase:", error);        // Fallback to localStorage on error
+        }      } catch (error) {
+        console.error("Error saving to Supabase:", {
+          error,
+          newLog,
+          food,
+          errorMessage: error instanceof Error ? error.message : String(error)
+        });// Fallback to localStorage on error
         const savedLog = localStorageUtils.addFoodLog(newLog);
         const logWithFood = { ...savedLog, food };
         setFoodLogs(prev => [logWithFood, ...prev]);

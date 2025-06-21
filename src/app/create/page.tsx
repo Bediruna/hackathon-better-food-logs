@@ -52,9 +52,12 @@ export default function CreateFoodPage() {
     if (user) {
       // User is logged in → save to Supabase
       const { /* id, */ ...foodWithoutId } = newFood;
-      const added = await supabaseUtils.addFood(foodWithoutId);
-      if (!added) {
-        console.error("Failed to save to Supabase:");
+      const added = await supabaseUtils.addFood(foodWithoutId);      if (!added) {
+        console.error("Failed to save to Supabase:", {
+          foodData: foodWithoutId,
+          user: user?.id,
+          timestamp: new Date().toISOString()
+        });
         alert("Error saving to cloud, please try again");
         return;
       }
