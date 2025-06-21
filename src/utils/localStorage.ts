@@ -1,3 +1,4 @@
+import { v4 as uuidv4 } from "uuid";
 import { Food, FoodLog } from "../types";
 
 const FOODS_KEY = "better_food_logs_foods";
@@ -41,30 +42,33 @@ export const localStorageUtils = {
     const logs = this.getFoodLogs();
     const newLog: FoodLog = {
       ...log,
-      id: Date.now() + Math.random(), // Simple ID generation
+      id: uuidv4(), // Simple ID generation
     };
     logs.push(newLog);
     this.saveFoodLogs(logs);
     return newLog;
-  },  updateFoodLog(logId: number, servings_consumed: number): boolean {
-    console.log('LocalStorage updateFoodLog called with ID:', logId, 'servings:', servings_consumed);
+  },
+  updateFoodLog(logId: string, servings_consumed: number): boolean {
     const logs = this.getFoodLogs();
-    console.log('Current logs in localStorage:', logs.map(log => ({ id: log.id, servings: log.servings_consumed })));
+    console.log(
+      "Current logs in localStorage:",
+      logs.map((log) => ({ id: log.id, servings: log.servings_consumed }))
+    );
     const logIndex = logs.findIndex((log) => log.id === logId);
-    console.log('Found log at index:', logIndex);
+    console.log("Found log at index:", logIndex);
     if (logIndex !== -1) {
       logs[logIndex].servings_consumed = servings_consumed;
       this.saveFoodLogs(logs);
-      console.log('Successfully updated log in localStorage');
+      console.log("Successfully updated log in localStorage");
       return true;
     }
-    console.log('Log with ID', logId, 'not found in localStorage');
+    console.log("Log with ID", logId, "not found in localStorage");
     return false;
   },
 
-  deleteFoodLog(logId: number): boolean {
+  deleteFoodLog(logId: string): boolean {
     const logs = this.getFoodLogs();
-const filteredLogs = logs.filter((log) => log.id !== logId);
+    const filteredLogs = logs.filter((log) => log.id !== logId);
     if (filteredLogs.length !== logs.length) {
       this.saveFoodLogs(filteredLogs);
       return true;
