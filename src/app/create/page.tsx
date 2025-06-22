@@ -12,65 +12,91 @@ export default function CreateFoodPage() {
   const router = useRouter();
   const [formData, setFormData] = useState({
     name: "",
-    brandName: "",
-    servingDescription: "",
-    servingMassG: "",
-    servingVolumeMl: "",
+    brand_name: "",
+    serving_description: "",
+    serving_mass_g: "",
+    serving_volume_ml: "",
     calories: "",
-    proteinG: "",
-    fatG: "",
-    carbsG: "",
-    sugarG: "",
-    sodiumMg: "",
-    cholesterolMg: "",
+    protein_g: "",
+    fat_g: "",
+    carbs_g: "",
+    sugar_g: "",
+    sodium_mg: "",
+    cholesterol_mg: "",
   });
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    setFormData((prev) => {
+      const updated = { ...prev, [field]: value };
+
+      if (field === "serving_mass_g" && value) {
+        updated.serving_volume_ml = "";
+      } else if (field === "serving_volume_ml" && value) {
+        updated.serving_mass_g = "";
+      }
+
+      return updated;
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const newFood: Food = {
-      id: Date.now(),
+    const newFood = {
+      id: crypto.randomUUID(), // Generate a unique ID
       name: formData.name,
-      brandName: formData.brandName || undefined,
-      servingDescription: formData.servingDescription,
-      servingMassG: parseFloat(formData.servingMassG) || 0,
-      servingVolumeMl: parseFloat(formData.servingVolumeMl) || 0,
+      brand_name: formData.brand_name || undefined,
+      serving_description: formData.serving_description,
+      // Only one of these should be set, the other should be null
+      serving_mass_g: formData.serving_mass_g
+        ? parseFloat(formData.serving_mass_g)
+        : null,
+      serving_volume_ml: formData.serving_volume_ml
+        ? parseFloat(formData.serving_volume_ml)
+        : null,
       calories: parseFloat(formData.calories) || 0,
-      proteinG: parseFloat(formData.proteinG) || 0,
-      fatG: parseFloat(formData.fatG) || 0,
-      carbsG: parseFloat(formData.carbsG) || 0,
-      sugarG: parseFloat(formData.sugarG) || 0,
-      sodiumMg: parseFloat(formData.sodiumMg) || 0,
-      cholesterolMg: parseFloat(formData.cholesterolMg) || 0,
+      protein_g: parseFloat(formData.protein_g) || 0,
+      fat_g: parseFloat(formData.fat_g) || 0,
+      carbs_g: parseFloat(formData.carbs_g) || 0,
+      sugar_g: parseFloat(formData.sugar_g) || 0,
+      sodium_mg: parseFloat(formData.sodium_mg) || 0,
+      cholesterol_mg: parseFloat(formData.cholesterol_mg) || 0,
     };
 
     const {
       data: { user },
     } = await supabase.auth.getUser();
 
+    if (!newFood.name.trim() || !newFood.serving_description.trim()) {
+      alert("Please fill in all required fields");
+      return;
+    }
+
     if (user) {
       // User is logged in → save to Supabase
+      console.log("Saving to Supabase:", newFood);
       const { /* id, */ ...foodWithoutId } = newFood;
-      const added = await supabaseUtils.addFood(foodWithoutId);
-      if (!added) {
-        console.error("Failed to save to Supabase:");
+      const added = await supabaseUtils.addFood(foodWithoutId);      if (!added) {
+        console.error("Failed to save to Supabase:", {
+          foodData: foodWithoutId,
+          user: user?.id,
+          timestamp: new Date().toISOString()
+        });
         alert("Error saving to cloud, please try again");
         return;
       }
     } else {
       // User is not logged in → save to localStorage
-      localStorageUtils.addFood(newFood);
+      localStorageUtils.addFood(newFood as Food);
     }
 
     router.push("/");
   };
 
   const isValid =
-    formData.name && formData.servingDescription && formData.calories;
+    !!formData.name.trim() &&
+    !!formData.serving_description.trim() &&
+    !isNaN(parseFloat(formData.calories));
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -115,8 +141,10 @@ export default function CreateFoodPage() {
               </label>
               <input
                 type="text"
-                value={formData.brandName}
-                onChange={(e) => handleInputChange("brandName", e.target.value)}
+                value={formData.brand_name}
+                onChange={(e) =>
+                  handleInputChange("brand_name", e.target.value)
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                 placeholder="e.g., Chobani"
               />
@@ -137,9 +165,9 @@ export default function CreateFoodPage() {
               </label>
               <input
                 type="text"
-                value={formData.servingDescription}
+                value={formData.serving_description}
                 onChange={(e) =>
-                  handleInputChange("servingDescription", e.target.value)
+                  handleInputChange("serving_description", e.target.value)
                 }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                 placeholder="e.g., 1 cup (227g)"
@@ -155,12 +183,13 @@ export default function CreateFoodPage() {
                 <input
                   type="number"
                   step="0.1"
-                  value={formData.servingMassG}
+                  value={formData.serving_mass_g}
                   onChange={(e) =>
-                    handleInputChange("servingMassG", e.target.value)
+                    handleInputChange("serving_mass_g", e.target.value)
                   }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                   placeholder="227"
+                  disabled={!!formData.serving_volume_ml}
                 />
               </div>
 
@@ -171,12 +200,13 @@ export default function CreateFoodPage() {
                 <input
                   type="number"
                   step="0.1"
-                  value={formData.servingVolumeMl}
+                  value={formData.serving_volume_ml}
                   onChange={(e) =>
-                    handleInputChange("servingVolumeMl", e.target.value)
+                    handleInputChange("serving_volume_ml", e.target.value)
                   }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                   placeholder="240"
+                  disabled={!!formData.serving_mass_g}
                 />
               </div>
             </div>
@@ -212,8 +242,8 @@ export default function CreateFoodPage() {
               <input
                 type="number"
                 step="0.1"
-                value={formData.proteinG}
-                onChange={(e) => handleInputChange("proteinG", e.target.value)}
+                value={formData.protein_g}
+                onChange={(e) => handleInputChange("protein_g", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                 placeholder="23"
               />
@@ -226,8 +256,8 @@ export default function CreateFoodPage() {
               <input
                 type="number"
                 step="0.1"
-                value={formData.fatG}
-                onChange={(e) => handleInputChange("fatG", e.target.value)}
+                value={formData.fat_g}
+                onChange={(e) => handleInputChange("fat_g", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                 placeholder="0"
               />
@@ -240,8 +270,8 @@ export default function CreateFoodPage() {
               <input
                 type="number"
                 step="0.1"
-                value={formData.carbsG}
-                onChange={(e) => handleInputChange("carbsG", e.target.value)}
+                value={formData.carbs_g}
+                onChange={(e) => handleInputChange("carbs_g", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                 placeholder="9"
               />
@@ -254,8 +284,8 @@ export default function CreateFoodPage() {
               <input
                 type="number"
                 step="0.1"
-                value={formData.sugarG}
-                onChange={(e) => handleInputChange("sugarG", e.target.value)}
+                value={formData.sugar_g}
+                onChange={(e) => handleInputChange("sugar_g", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                 placeholder="6"
               />
@@ -268,8 +298,8 @@ export default function CreateFoodPage() {
               <input
                 type="number"
                 step="0.1"
-                value={formData.sodiumMg}
-                onChange={(e) => handleInputChange("sodiumMg", e.target.value)}
+                value={formData.sodium_mg}
+                onChange={(e) => handleInputChange("sodium_mg", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                 placeholder="65"
               />
@@ -282,9 +312,9 @@ export default function CreateFoodPage() {
               <input
                 type="number"
                 step="0.1"
-                value={formData.cholesterolMg}
+                value={formData.cholesterol_mg}
                 onChange={(e) =>
-                  handleInputChange("cholesterolMg", e.target.value)
+                  handleInputChange("cholesterol_mg", e.target.value)
                 }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                 placeholder="10"

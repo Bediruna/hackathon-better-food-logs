@@ -18,7 +18,7 @@ export default function SearchBar({ foods, onSelectFood, placeholder = "Search f
     if (query.trim()) {
       const filtered = foods.filter(food =>
         food.name.toLowerCase().includes(query.toLowerCase()) ||
-        (food.brandName && food.brandName.toLowerCase().includes(query.toLowerCase()))
+        (food.brand_name && food.brand_name.toLowerCase().includes(query.toLowerCase()))
       );
       setFilteredFoods(filtered);
       setIsOpen(true);
@@ -81,10 +81,10 @@ export default function SearchBar({ foods, onSelectFood, placeholder = "Search f
               <div className="flex justify-between items-start">
                 <div>
                   <p className="font-medium text-gray-900">{food.name}</p>
-                  {food.brandName && (
-                    <p className="text-sm text-gray-500">{food.brandName}</p>
+                  {food.brand_name && (
+                    <p className="text-sm text-gray-500">{food.brand_name}</p>
                   )}
-                  <p className="text-xs text-gray-400">{food.servingDescription}</p>
+                  <p className="text-xs text-gray-400">{food.serving_description}</p>
                 </div>
                 <div className="text-right">
                   <p className="text-sm font-semibold text-emerald-600">{food.calories} cal</p>

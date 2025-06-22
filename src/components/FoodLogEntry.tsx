@@ -39,10 +39,10 @@ export default function FoodLogEntry({ food, onLog, onCancel }: FoodLogEntryProp
       <div className="flex justify-between items-start mb-4">
         <div>
           <h3 className="text-lg font-semibold text-gray-900">{food.name}</h3>
-          {food.brandName && (
-            <p className="text-gray-600">{food.brandName}</p>
+          {food.brand_name && (
+            <p className="text-gray-600">{food.brand_name}</p>
           )}
-          <p className="text-sm text-gray-500">{food.servingDescription}</p>
+          <p className="text-sm text-gray-500">{food.serving_description}</p>
         </div>
         <button
           onClick={onCancel}
@@ -60,15 +60,15 @@ export default function FoodLogEntry({ food, onLog, onCancel }: FoodLogEntryProp
           </div>
           <div>
             <span className="text-gray-600">Protein:</span>
-            <span className="ml-2 font-semibold">{food.proteinG}g</span>
+            <span className="ml-2 font-semibold">{food.protein_g}g</span>
           </div>
           <div>
             <span className="text-gray-600">Fat:</span>
-            <span className="ml-2 font-semibold">{food.fatG}g</span>
+            <span className="ml-2 font-semibold">{food.fat_g}g</span>
           </div>
           <div>
             <span className="text-gray-600">Carbs:</span>
-            <span className="ml-2 font-semibold">{food.carbsG}g</span>
+            <span className="ml-2 font-semibold">{food.carbs_g}g</span>
           </div>
         </div>
       </div>
