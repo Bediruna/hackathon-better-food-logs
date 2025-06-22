@@ -16,6 +16,16 @@ CREATE TABLE IF NOT EXISTS public.foods (
     sugar_g NUMERIC DEFAULT 0,
     sodium_mg NUMERIC DEFAULT 0,
     cholesterol_mg NUMERIC DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create the users table
+CREATE TABLE IF NOT EXISTS public.users (
+    id TEXT PRIMARY KEY, -- Firebase UID as string
+    display_name TEXT NOT NULL,
+    email TEXT NOT NULL UNIQUE,
+    photo_url TEXT,
+    created_date BIGINT NOT NULL, -- Unix timestamp
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -29,11 +39,16 @@ CREATE TABLE IF NOT EXISTS public.food_logs (
     consumed_date TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    
-    -- Foreign key constraint
+      -- Foreign key constraint
     CONSTRAINT fk_food_logs_food_id 
         FOREIGN KEY (food_id) 
         REFERENCES public.foods(id) 
+        ON DELETE CASCADE,
+        
+    -- Foreign key constraint to users table
+    CONSTRAINT fk_food_logs_user_id 
+        FOREIGN KEY (user_id) 
+        REFERENCES public.users(id) 
         ON DELETE CASCADE
 );
 
@@ -42,9 +57,11 @@ CREATE INDEX IF NOT EXISTS idx_food_logs_user_id ON public.food_logs(user_id);
 CREATE INDEX IF NOT EXISTS idx_food_logs_consumed_date ON public.food_logs(consumed_date);
 CREATE INDEX IF NOT EXISTS idx_food_logs_food_id ON public.food_logs(food_id);
 CREATE INDEX IF NOT EXISTS idx_foods_name ON public.foods(name);
+CREATE INDEX IF NOT EXISTS idx_users_email ON public.users(email);
 
 -- Enable Row Level Security (RLS)
 ALTER TABLE public.foods ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.food_logs ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies for foods table
@@ -59,6 +76,19 @@ CREATE POLICY "Allow authenticated users to insert foods" ON public.foods
 -- Allow users to update foods they created (optional - you might want to restrict this)
 CREATE POLICY "Allow users to update foods" ON public.foods
     FOR UPDATE USING (auth.role() = 'authenticated');
+
+-- RLS Policies for users table
+-- Users can only see their own profile
+CREATE POLICY "Users can view own profile" ON public.users
+    FOR SELECT USING (auth.uid()::text = id);
+
+-- Allow authenticated users to insert their own user record
+CREATE POLICY "Users can insert own profile" ON public.users
+    FOR INSERT WITH CHECK (auth.uid()::text = id);
+
+-- Users can only update their own profile
+CREATE POLICY "Users can update own profile" ON public.users
+    FOR UPDATE USING (auth.uid()::text = id);
 
 -- RLS Policies for food_logs table
 -- Users can only see their own food logs
@@ -94,6 +124,11 @@ CREATE TRIGGER handle_foods_updated_at
 
 CREATE TRIGGER handle_food_logs_updated_at
     BEFORE UPDATE ON public.food_logs
+    FOR EACH ROW
+    EXECUTE FUNCTION public.handle_updated_at();
+
+CREATE TRIGGER handle_users_updated_at
+    BEFORE UPDATE ON public.users
     FOR EACH ROW
     EXECUTE FUNCTION public.handle_updated_at();
 
