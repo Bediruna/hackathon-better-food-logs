@@ -1,4 +1,3 @@
-```markdown
 # 🥗 Better Food Logs – Project Story
 
 ## 🧠 Inspiration
@@ -86,4 +85,3 @@ We’re planning to:
 - JSON  
 - Bolt (for prototyping)  
 - Vercel (for hosting)
-```
