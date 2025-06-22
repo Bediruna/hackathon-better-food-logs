@@ -77,19 +77,17 @@ export default function Home() {
           console.log("Food log successfully saved to cloud");
         } else {
           throw new Error("Failed to save to Supabase");
-        }
-      } catch (error) {
+        }      } catch (error) {
         console.error("Error saving to Supabase:", error);
         // Fallback to localStorage on error
         localStorageUtils.addFoodLog(newLog);
-        const logWithFood = { ...newLog, id: Date.now(), food };
+        const logWithFood = { ...newLog, id: Date.now().toString(), food };
         setFoodLogs((prev) => [logWithFood, ...prev]);
         console.log("Food log saved locally as fallback");
-      }
-    } else {
+      }    } else {
       // User is not signed in, save to localStorage
       localStorageUtils.addFoodLog(newLog);
-      const logWithFood = { ...newLog, id: Date.now(), food };
+      const logWithFood = { ...newLog, id: Date.now().toString(), food };
       setFoodLogs((prev) => [logWithFood, ...prev]);
       console.log("Food log saved locally (user not signed in)");
     }
@@ -102,8 +100,7 @@ export default function Home() {
   const handleEditLog = (log: FoodLog) => {
     console.log("Opening edit modal for log:", log);
     setEditingLog(log);
-  };
-  const handleSaveEditLog = async (logId: number, newServings: number) => {
+  };  const handleSaveEditLog = async (logId: string, newServings: number) => {
     console.log(
       "Attempting to save edit for log ID:",
       logId,
@@ -173,8 +170,7 @@ export default function Home() {
   const handleDeleteLog = (log: FoodLog) => {
     setDeletingLog(log);
   };
-
-  const handleConfirmDeleteLog = async (logId: number) => {
+  const handleConfirmDeleteLog = async (logId: string) => {
     if (user) {
       // User is signed in, delete from Supabase
       try {
