@@ -25,7 +25,6 @@ CREATE TABLE IF NOT EXISTS public.users (
     display_name TEXT NOT NULL,
     email TEXT NOT NULL UNIQUE,
     photo_url TEXT,
-    created_date BIGINT NOT NULL, -- Unix timestamp
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
