@@ -3,7 +3,7 @@
 
 -- Create the foods table
 CREATE TABLE IF NOT EXISTS public.foods (
-    id TEXT PRIMARY KEY, -- Changed to TEXT to match UUID format
+    id BIGSERIAL PRIMARY KEY,
     name TEXT NOT NULL,
     brand_name TEXT,
     serving_description TEXT NOT NULL,
@@ -16,8 +16,7 @@ CREATE TABLE IF NOT EXISTS public.foods (
     sugar_g NUMERIC DEFAULT 0,
     sodium_mg NUMERIC DEFAULT 0,
     cholesterol_mg NUMERIC DEFAULT 0,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Create the users table
@@ -32,9 +31,9 @@ CREATE TABLE IF NOT EXISTS public.users (
 
 -- Create the food_logs table
 CREATE TABLE IF NOT EXISTS public.food_logs (
-    id TEXT PRIMARY KEY, -- Changed to TEXT to match UUID format
+    id BIGSERIAL PRIMARY KEY,
     user_id TEXT NOT NULL, -- Firebase UID as string
-    food_id TEXT NOT NULL, -- Changed to TEXT to match UUID format
+    food_id BIGINT NOT NULL,
     servings_consumed NUMERIC NOT NULL DEFAULT 1,
     consumed_date TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),

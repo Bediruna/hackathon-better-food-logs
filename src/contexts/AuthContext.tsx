@@ -4,7 +4,6 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import type { User } from "@supabase/supabase-js";
 import { syncLocalStorageToSupabase } from "@/utils/syncUtils";
-import { ensureSampleFoodsConsistency, validateFoodLogConsistency } from "@/utils/dataConsistency";
 
 interface AuthContextType {
   user: User | null;
@@ -53,30 +52,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    const handleUserChange = async () => {
-      if (user) {
-        console.log("🔄 User authenticated, syncing data...");
-        
-        // First ensure sample foods are available
-        await ensureSampleFoodsConsistency(true);
-        
-        // Then sync any local data to Supabase
-        await syncLocalStorageToSupabase(user.id);
-        
-        // Finally validate data consistency
-        const consistencyResult = await validateFoodLogConsistency(user.id);
-        if (!consistencyResult.foodsSync || !consistencyResult.logsSync) {
-          console.warn("⚠️ Data consistency issues detected:", consistencyResult.errors);
-        } else {
-          console.log("✅ Data consistency validated");
-        }
-      } else {
-        // User not authenticated, just ensure sample foods are in localStorage
-        await ensureSampleFoodsConsistency(false);
-      }
-    };
-
-    handleUserChange();
+    if (user) {
+      syncLocalStorageToSupabase(user.id);
+    }
   }, [user]);
 
   const signIn = async (email: string, password: string) => {

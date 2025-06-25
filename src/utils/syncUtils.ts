@@ -1,6 +1,5 @@
 import { supabase } from "@/lib/supabaseClient";
 import { localStorageUtils } from "@/utils/localStorage";
-import { Food, FoodLog } from "@/types";
 
 export async function syncLocalStorageToSupabase(userId: string) {
   const localFoods = localStorageUtils.getFoods();
@@ -8,128 +7,106 @@ export async function syncLocalStorageToSupabase(userId: string) {
 
   if (localFoods.length === 0 && localLogs.length === 0) return;
 
-  try {
-    // Step 1: Sync foods first to ensure they exist in Supabase
-    await syncFoodsToSupabase(localFoods);
-    
-    // Step 2: Sync food logs, using the correct food IDs
-    await syncFoodLogsToSupabase(localLogs, userId);
-    
-    // Step 3: Clear local storage after successful sync
-    localStorageUtils.clearAll();
-    console.log("✅ Successfully synced local data to Supabase.");
-  } catch (error) {
-    console.error("❌ Error during sync:", error);
-    // Don't clear local storage if sync failed
-  }
-}
-
-async function syncFoodsToSupabase(localFoods: Food[]) {
-  if (localFoods.length === 0) return;
-
-  // Get existing foods from Supabase
+  // Fetch foods from Supabase
   const { data: existingFoods, error: foodFetchError } = await supabase
     .from("foods")
-    .select("id, name, brand_name, serving_description, serving_mass_g");
+    .select("id, name, serving_mass_g");
 
   if (foodFetchError) {
-    throw new Error(`Failed to fetch existing foods: ${foodFetchError.message}`);
+    console.error("Error fetching foods:", foodFetchError.message);
+    return;
   }
 
-  // Create a set of existing food identifiers for quick lookup
   const existingFoodSet = new Set(
-    existingFoods?.map((f) => createFoodIdentifier(f)) || []
+    existingFoods?.map((f) => `${f.name}-${f.serving_mass_g}`)
   );
 
-  // Filter out foods that already exist
+  // Filter new foods
   const newFoods = localFoods.filter(
-    (food) => !existingFoodSet.has(createFoodIdentifier(food))
+    (food) => !existingFoodSet.has(`${food.name}-${food.serving_mass_g}`)
   );
 
   if (newFoods.length > 0) {
-    console.log(`📦 Syncing ${newFoods.length} new foods to Supabase...`);
-    
     const { error: insertFoodsError } = await supabase
       .from("foods")
-      .insert(newFoods.map(food => ({
-        id: food.id, // Preserve the UUID from localStorage
-        name: food.name,
-        brand_name: food.brand_name,
-        serving_description: food.serving_description,
-        serving_mass_g: food.serving_mass_g,
-        serving_volume_ml: food.serving_volume_ml,
-        calories: food.calories,
-        protein_g: food.protein_g,
-        fat_g: food.fat_g,
-        carbs_g: food.carbs_g,
-        sugar_g: food.sugar_g,
-        sodium_mg: food.sodium_mg,
-        cholesterol_mg: food.cholesterol_mg
-      })));
-
+      .insert(newFoods);
     if (insertFoodsError) {
-      throw new Error(`Failed to insert foods: ${insertFoodsError.message}`);
+      console.error("Error inserting foods:", insertFoodsError.message);
+      return;
     }
-    
-    console.log(`✅ Successfully synced ${newFoods.length} foods`);
   }
-}
 
-async function syncFoodLogsToSupabase(localLogs: FoodLog[], userId: string) {
-  if (localLogs.length === 0) return;
+  // Refresh all foods to get correct IDs
+  const { data: allFoods } = await supabase
+    .from("foods")
+    .select("id, name, serving_mass_g");
 
-  // Get existing logs from Supabase for this user
+  const foodIdMap = new Map<string, string>();
+  allFoods?.forEach((food) => {
+    foodIdMap.set(`${food.name}-${food.serving_mass_g}`, food.id);
+  });
+
+  // Fetch existing logs
   const { data: existingLogs, error: logFetchError } = await supabase
     .from("food_logs")
-    .select("id, food_id, consumed_date, servings_consumed")
+    .select("food_id, consumed_date")
     .eq("user_id", userId);
 
   if (logFetchError) {
-    throw new Error(`Failed to fetch existing logs: ${logFetchError.message}`);
+    console.error("Error fetching food logs:", logFetchError.message);
+    return;
   }
-
-  // Create a set of existing log identifiers
   const existingLogSet = new Set(
-    existingLogs?.map((log) => createLogIdentifier(log)) || []
+    existingLogs?.map((log) => `${log.food_id}-${log.consumed_date}`)
   );
 
-  // Filter out logs that already exist
-  const newLogs = localLogs.filter(
-    (log) => !existingLogSet.has(createLogIdentifier(log))
-  );
+  const logsToInsert = localLogs
+    .map(
+      (
+        log
+      ): {
+        user_id: string;
+        food_id: string;
+        consumed_date: string;
+        servings_consumed: number;
+      } | null => {
+        const food = localFoods.find((f) => f.id === log.food_id);
+        const foodKey = food ? `${food.name}-${food.serving_mass_g}` : "";
+        const realFoodId = foodIdMap.get(foodKey);
+        if (!realFoodId) return null;
 
-  if (newLogs.length > 0) {
-    console.log(`📝 Syncing ${newLogs.length} new food logs to Supabase...`);
-    
-    const logsToInsert = newLogs.map(log => ({
-      id: log.id, // Preserve the UUID from localStorage
-      user_id: userId,
-      food_id: log.food_id, // Use the same food ID
-      consumed_date: new Date(log.consumed_date).toISOString(),
-      servings_consumed: log.servings_consumed,
-    }));
+        const key = `${realFoodId}-${log.consumed_date}`;
+        if (existingLogSet.has(key)) return null;
 
+        return {
+          user_id: userId,
+          food_id: realFoodId,
+          consumed_date: new Date(log.consumed_date).toISOString(),
+          servings_consumed: log.servings_consumed,
+        };
+      }
+    )    .filter(
+      (
+        log
+      ): log is {
+        user_id: string;
+        food_id: string;
+        consumed_date: string;
+        servings_consumed: number;
+      } => Boolean(log)
+    );
+
+  if (logsToInsert.length > 0) {
     const { error: insertLogsError } = await supabase
       .from("food_logs")
       .insert(logsToInsert);
-
     if (insertLogsError) {
-      throw new Error(`Failed to insert food logs: ${insertLogsError.message}`);
+      console.error("Error inserting food logs:", insertLogsError.message);
+      return;
     }
-    
-    console.log(`✅ Successfully synced ${newLogs.length} food logs`);
   }
-}
 
-function createFoodIdentifier(food: Pick<Food, 'name' | 'brand_name' | 'serving_description' | 'serving_mass_g'>): string {
-  // Create a unique identifier for a food item
-  return `${food.name}|${food.brand_name || ''}|${food.serving_description}|${food.serving_mass_g || 0}`;
-}
-
-function createLogIdentifier(log: { food_id: string; consumed_date: string | number; servings_consumed: number }): string {
-  // Create a unique identifier for a food log
-  const date = typeof log.consumed_date === 'number' 
-    ? new Date(log.consumed_date).toISOString()
-    : log.consumed_date;
-  return `${log.food_id}|${date}|${log.servings_consumed}`;
+  // Clear local storage after sync
+  localStorageUtils.clearAll();
+  console.log("✅ Synced local foods and logs to Supabase.");
 }
