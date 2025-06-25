@@ -94,7 +94,7 @@ const handleLogout = async () => {
             target="_blank"
             rel="noreferrer"
           >
-            <span>Made with ❤️ and</span>
+            <span>Built with Bolt.new</span>
 
             <Image
               src="/white_circle_360x360.png"
