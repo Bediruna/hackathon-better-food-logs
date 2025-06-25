@@ -1,12 +1,19 @@
 "use client";
 
 import React, { useState } from "react";
-import { Save, ArrowLeft } from "lucide-react";
+import { Save, ArrowLeft, AlertTriangle } from "lucide-react";
 import { Food } from "@/types";
 import { localStorageUtils } from "@/utils/localStorage";
 import { useRouter } from "next/navigation";
 import { supabaseUtils } from "@/utils/supabaseUtils";
 import { supabase } from "@/lib/supabaseClient";
+import {
+  validateFoodEntry,
+  checkForDuplicateFood,
+  sanitizeInput,
+  formatNutritionValue,
+  type FoodValidationData,
+} from "@/utils/validation";
 
 export default function CreateFoodPage() {
   const router = useRouter();
@@ -25,9 +32,13 @@ export default function CreateFoodPage() {
     cholesterol_mg: "",
   });
 
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDuplicate, setIsDuplicate] = useState(false);
+
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => {
-      const updated = { ...prev, [field]: value };
+      const updated = { ...prev, [field]: sanitizeInput(value) };
 
       if (field === "serving_mass_g" && value) {
         updated.serving_volume_ml = "";
@@ -37,66 +48,148 @@ export default function CreateFoodPage() {
 
       return updated;
     });
+
+    // Clear validation errors when user starts typing
+    if (validationErrors.length > 0) {
+      setValidationErrors([]);
+    }
+    if (isDuplicate) {
+      setIsDuplicate(false);
+    }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    const newFood = {
-      id: crypto.randomUUID(), // Generate a unique ID
-      name: formData.name,
-      brand_name: formData.brand_name || undefined,
-      serving_description: formData.serving_description,
-      // Only one of these should be set, the other should be null
-      serving_mass_g: formData.serving_mass_g
-        ? parseFloat(formData.serving_mass_g)
-        : null,
-      serving_volume_ml: formData.serving_volume_ml
-        ? parseFloat(formData.serving_volume_ml)
-        : null,
-      calories: parseFloat(formData.calories) || 0,
-      protein_g: parseFloat(formData.protein_g) || 0,
-      fat_g: parseFloat(formData.fat_g) || 0,
-      carbs_g: parseFloat(formData.carbs_g) || 0,
-      sugar_g: parseFloat(formData.sugar_g) || 0,
-      sodium_mg: parseFloat(formData.sodium_mg) || 0,
-      cholesterol_mg: parseFloat(formData.cholesterol_mg) || 0,
-    };
-
+  const checkDuplicate = async (foodData: FoodValidationData) => {
     const {
       data: { user },
     } = await supabase.auth.getUser();
 
-    if (!newFood.name.trim() || !newFood.serving_description.trim()) {
-      alert("Please fill in all required fields");
-      return;
-    }
+    let existingFoods: Array<{
+      name: string;
+      brand_name?: string;
+      serving_description: string;
+    }> = [];
 
     if (user) {
-      // User is logged in → save to Supabase
-      console.log("Saving to Supabase:", newFood);
-      const { /* id, */ ...foodWithoutId } = newFood;
-      const added = await supabaseUtils.addFood(foodWithoutId);      if (!added) {
-        console.error("Failed to save to Supabase:", {
-          foodData: foodWithoutId,
-          user: user?.id,
-          timestamp: new Date().toISOString()
-        });
-        alert("Error saving to cloud, please try again");
-        return;
-      }
+      // Check Supabase foods
+      const supabaseFoods = await supabaseUtils.getFoods();
+      existingFoods = supabaseFoods;
     } else {
-      // User is not logged in → save to localStorage
-      localStorageUtils.addFood(newFood as Food);
+      // Check localStorage foods
+      const localFoods = localStorageUtils.getFoods();
+      existingFoods = localFoods;
     }
 
-    router.push("/");
+    return checkForDuplicateFood(foodData, existingFoods);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setValidationErrors([]);
+    setIsDuplicate(false);
+
+    try {
+      // Prepare validation data
+      const validationData: FoodValidationData = {
+        name: formData.name,
+        brand_name: formData.brand_name || undefined,
+        serving_description: formData.serving_description,
+        serving_mass_g: formData.serving_mass_g
+          ? parseFloat(formData.serving_mass_g)
+          : undefined,
+        serving_volume_ml: formData.serving_volume_ml
+          ? parseFloat(formData.serving_volume_ml)
+          : undefined,
+        calories: parseFloat(formData.calories) || 0,
+        protein_g: formData.protein_g
+          ? parseFloat(formData.protein_g)
+          : undefined,
+        fat_g: formData.fat_g ? parseFloat(formData.fat_g) : undefined,
+        carbs_g: formData.carbs_g ? parseFloat(formData.carbs_g) : undefined,
+        sugar_g: formData.sugar_g ? parseFloat(formData.sugar_g) : undefined,
+        sodium_mg: formData.sodium_mg
+          ? parseFloat(formData.sodium_mg)
+          : undefined,
+        cholesterol_mg: formData.cholesterol_mg
+          ? parseFloat(formData.cholesterol_mg)
+          : undefined,
+      };
+
+      // Validate input
+      const validation = validateFoodEntry(validationData);
+      if (!validation.isValid) {
+        setValidationErrors(validation.errors);
+        return;
+      }
+
+      // Check for duplicates
+      const isDuplicateFood = await checkDuplicate(validationData);
+      if (isDuplicateFood) {
+        setIsDuplicate(true);
+        setValidationErrors([
+          "This food item already exists with similar details",
+        ]);
+        return;
+      }
+
+      // Prepare the new food object
+      const newFood: Omit<Food, "id"> = {
+        name: sanitizeInput(formData.name),
+        brand_name: formData.brand_name
+          ? sanitizeInput(formData.brand_name)
+          : undefined,
+        serving_description: sanitizeInput(formData.serving_description),
+        serving_mass_g: formData.serving_mass_g
+          ? formatNutritionValue(formData.serving_mass_g)
+          : null,
+        serving_volume_ml: formData.serving_volume_ml
+          ? formatNutritionValue(formData.serving_volume_ml)
+          : null,
+        calories: formatNutritionValue(formData.calories),
+        protein_g: formatNutritionValue(formData.protein_g || "0"),
+        fat_g: formatNutritionValue(formData.fat_g || "0"),
+        carbs_g: formatNutritionValue(formData.carbs_g || "0"),
+        sugar_g: formatNutritionValue(formData.sugar_g || "0"),
+        sodium_mg: formatNutritionValue(formData.sodium_mg || "0"),
+        cholesterol_mg: formatNutritionValue(formData.cholesterol_mg || "0"),
+      };
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (user) {
+        // User is logged in → save to Supabase
+        console.log("Saving to Supabase:", newFood);
+        const added = await supabaseUtils.addFood(newFood);
+        if (!added) {
+          console.error("Failed to save to Supabase:", {
+            foodData: newFood,
+            user: user?.id,
+            timestamp: new Date().toISOString(),
+          });
+          setValidationErrors(["Error saving to cloud, please try again"]);
+          return;
+        }
+      } else {
+        // User is not logged in → save to localStorage
+        const foodWithId = { ...newFood, id: crypto.randomUUID() } as Food;
+        localStorageUtils.addFood(foodWithId);
+      }
+
+      router.push("/");
+    } catch (error) {
+      console.error("Error creating food:", error);
+      setValidationErrors(["An unexpected error occurred. Please try again."]);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const isValid =
-    !!formData.name.trim() &&
-    !!formData.serving_description.trim() &&
-    !isNaN(parseFloat(formData.calories));
+    formData.name.trim() &&
+    formData.serving_description.trim() &&
+    formData.calories.trim();
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -105,6 +198,7 @@ export default function CreateFoodPage() {
         <button
           onClick={() => router.push("/")}
           className="p-2 text-gray-600 transition-colors hover:text-gray-900"
+          disabled={isSubmitting}
         >
           <ArrowLeft size={24} />
         </button>
@@ -112,6 +206,43 @@ export default function CreateFoodPage() {
           Create New Food Record
         </h1>
       </div>
+
+      {/* Validation Errors */}
+      {validationErrors.length > 0 && (
+        <div className="p-4 border border-red-200 rounded-lg bg-red-50">
+          <div className="flex items-start space-x-3">
+            <AlertTriangle className="text-red-600 mt-0.5" size={20} />
+            <div>
+              <h3 className="font-medium text-red-800">
+                Please fix the following issues:
+              </h3>
+              <ul className="mt-2 text-sm text-red-700 list-disc list-inside space-y-1">
+                {validationErrors.map((error, index) => (
+                  <li key={index}>{error}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Duplicate Warning */}
+      {isDuplicate && (
+        <div className="p-4 border border-yellow-200 rounded-lg bg-yellow-50">
+          <div className="flex items-start space-x-3">
+            <AlertTriangle className="text-yellow-600 mt-0.5" size={20} />
+            <div>
+              <h3 className="font-medium text-yellow-800">
+                Possible Duplicate
+              </h3>
+              <p className="mt-1 text-sm text-yellow-700">
+                A similar food item already exists. Please check if you meant to
+                select an existing item instead.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Basic Information */}
@@ -131,8 +262,13 @@ export default function CreateFoodPage() {
                 onChange={(e) => handleInputChange("name", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                 placeholder="e.g., Greek Yogurt"
+                maxLength={100}
                 required
+                disabled={isSubmitting}
               />
+              <p className="mt-1 text-xs text-gray-500">
+                {formData.name.length}/100 characters
+              </p>
             </div>
 
             <div>
@@ -147,7 +283,12 @@ export default function CreateFoodPage() {
                 }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                 placeholder="e.g., Chobani"
+                maxLength={50}
+                disabled={isSubmitting}
               />
+              <p className="mt-1 text-xs text-gray-500">
+                {formData.brand_name.length}/50 characters
+              </p>
             </div>
           </div>
         </div>
@@ -171,8 +312,13 @@ export default function CreateFoodPage() {
                 }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                 placeholder="e.g., 1 cup (227g)"
+                maxLength={100}
                 required
+                disabled={isSubmitting}
               />
+              <p className="mt-1 text-xs text-gray-500">
+                {formData.serving_description.length}/100 characters
+              </p>
             </div>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -183,13 +329,15 @@ export default function CreateFoodPage() {
                 <input
                   type="number"
                   step="0.1"
+                  min="0.1"
+                  max="10000"
                   value={formData.serving_mass_g}
                   onChange={(e) =>
                     handleInputChange("serving_mass_g", e.target.value)
                   }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                   placeholder="227"
-                  disabled={!!formData.serving_volume_ml}
+                  disabled={!!formData.serving_volume_ml || isSubmitting}
                 />
               </div>
 
@@ -200,16 +348,21 @@ export default function CreateFoodPage() {
                 <input
                   type="number"
                   step="0.1"
+                  min="0.1"
+                  max="10000"
                   value={formData.serving_volume_ml}
                   onChange={(e) =>
                     handleInputChange("serving_volume_ml", e.target.value)
                   }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                   placeholder="240"
-                  disabled={!!formData.serving_mass_g}
+                  disabled={!!formData.serving_mass_g || isSubmitting}
                 />
               </div>
             </div>
+            <p className="text-xs text-gray-500">
+              * Provide either mass OR volume, not both
+            </p>
           </div>
         </div>
 
@@ -227,11 +380,14 @@ export default function CreateFoodPage() {
               <input
                 type="number"
                 step="0.1"
+                min="0"
+                max="10000"
                 value={formData.calories}
                 onChange={(e) => handleInputChange("calories", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                 placeholder="130"
                 required
+                disabled={isSubmitting}
               />
             </div>
 
@@ -242,10 +398,13 @@ export default function CreateFoodPage() {
               <input
                 type="number"
                 step="0.1"
+                min="0"
+                max="1000"
                 value={formData.protein_g}
                 onChange={(e) => handleInputChange("protein_g", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                 placeholder="23"
+                disabled={isSubmitting}
               />
             </div>
 
@@ -256,10 +415,13 @@ export default function CreateFoodPage() {
               <input
                 type="number"
                 step="0.1"
+                min="0"
+                max="1000"
                 value={formData.fat_g}
                 onChange={(e) => handleInputChange("fat_g", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                 placeholder="0"
+                disabled={isSubmitting}
               />
             </div>
 
@@ -270,10 +432,13 @@ export default function CreateFoodPage() {
               <input
                 type="number"
                 step="0.1"
+                min="0"
+                max="1000"
                 value={formData.carbs_g}
                 onChange={(e) => handleInputChange("carbs_g", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                 placeholder="9"
+                disabled={isSubmitting}
               />
             </div>
 
@@ -284,10 +449,13 @@ export default function CreateFoodPage() {
               <input
                 type="number"
                 step="0.1"
+                min="0"
+                max="1000"
                 value={formData.sugar_g}
                 onChange={(e) => handleInputChange("sugar_g", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                 placeholder="6"
+                disabled={isSubmitting}
               />
             </div>
 
@@ -298,10 +466,13 @@ export default function CreateFoodPage() {
               <input
                 type="number"
                 step="0.1"
+                min="0"
+                max="100000"
                 value={formData.sodium_mg}
                 onChange={(e) => handleInputChange("sodium_mg", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                 placeholder="65"
+                disabled={isSubmitting}
               />
             </div>
 
@@ -312,12 +483,15 @@ export default function CreateFoodPage() {
               <input
                 type="number"
                 step="0.1"
+                min="0"
+                max="10000"
                 value={formData.cholesterol_mg}
                 onChange={(e) =>
                   handleInputChange("cholesterol_mg", e.target.value)
                 }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                 placeholder="10"
+                disabled={isSubmitting}
               />
             </div>
           </div>
@@ -326,15 +500,24 @@ export default function CreateFoodPage() {
         {/* Submit Button */}
         <button
           type="submit"
-          disabled={!isValid}
+          disabled={!isValid || isSubmitting}
           className={`w-full py-3 rounded-lg font-semibold flex items-center justify-center space-x-2 transition-all duration-200 ${
-            isValid
+            isValid && !isSubmitting
               ? "bg-gradient-to-r from-emerald-500 to-blue-500 text-white hover:shadow-lg"
               : "bg-gray-300 text-gray-500 cursor-not-allowed"
           }`}
         >
-          <Save size={20} />
-          <span>Save Food Record</span>
+          {isSubmitting ? (
+            <>
+              <div className="w-5 h-5 border-2 border-gray-400 rounded-full border-t-transparent animate-spin"></div>
+              <span>Saving...</span>
+            </>
+          ) : (
+            <>
+              <Save size={20} />
+              <span>Save Food Record</span>
+            </>
+          )}
         </button>
       </form>
     </div>

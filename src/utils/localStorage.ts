@@ -10,7 +10,8 @@ export const localStorageUtils = {
     try {
       const foods = localStorage.getItem(FOODS_KEY);
       return foods ? JSON.parse(foods) : [];
-    } catch {
+    } catch (err) {
+      console.error("Failed to parse stored foods:", err);
       return [];
     }
   },
@@ -21,7 +22,11 @@ export const localStorageUtils = {
 
   addFood(food: Food): void {
     const foods = this.getFoods();
-    foods.push(food);
+    const foodWithId: Food = {
+      ...food,
+      id: food.id ?? uuidv4(), // auto-generate if not provided
+    } as Food;
+    foods.push(foodWithId);
     this.saveFoods(foods);
   },
 

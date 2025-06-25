@@ -10,14 +10,37 @@ export const supabaseUtils = {
       return [];
     }
 
-    return data || [];
+    // Convert Supabase data to application format
+    return (data || []).map((food) => ({
+      id: food.id,
+      name: food.name,
+      brand_name: food.brand_name,
+      serving_description: food.serving_description,
+      serving_mass_g: food.serving_mass_g,
+      serving_volume_ml: food.serving_volume_ml,
+      calories: food.calories || 0,
+      protein_g: food.protein_g || 0,
+      fat_g: food.fat_g || 0,
+      carbs_g: food.carbs_g || 0,
+      sugar_g: food.sugar_g || 0,
+      sodium_mg: food.sodium_mg || 0,
+      cholesterol_mg: food.cholesterol_mg || 0,
+    }));
   },
-  async addFood(food: Omit<Food, "id">): Promise<Food | null> {
+
+  async addFood(food: Partial<Food>): Promise<Food | null> {
+    const { id, ...rest } = food;
+
     const { data, error } = await supabase
       .from("foods")
-      .insert(food)
+      .insert(
+        id
+          ? { id, ...rest } // include id if provided
+          : { ...rest } // omit id if not provided
+      )
       .select()
       .single();
+
     if (error) {
       console.error("Error adding food:", {
         message: error.message,
@@ -28,7 +51,22 @@ export const supabaseUtils = {
       });
       return null;
     }
-    return data;
+
+    return {
+      id: data.id,
+      name: data.name,
+      brand_name: data.brand_name,
+      serving_description: data.serving_description,
+      serving_mass_g: data.serving_mass_g,
+      serving_volume_ml: data.serving_volume_ml,
+      calories: data.calories || 0,
+      protein_g: data.protein_g || 0,
+      fat_g: data.fat_g || 0,
+      carbs_g: data.carbs_g || 0,
+      sugar_g: data.sugar_g || 0,
+      sodium_mg: data.sodium_mg || 0,
+      cholesterol_mg: data.cholesterol_mg || 0,
+    };
   },
 
   // ✅ FOOD LOG METHODS
@@ -89,17 +127,44 @@ export const supabaseUtils = {
       return [];
     }
 
+    // Create a map of food ID to food data for quick lookup
+    const foodsMap = new Map();
+    if (foodsData) {
+      foodsData.forEach((food) => {
+        foodsMap.set(food.id, {
+          id: food.id,
+          name: food.name,
+          brand_name: food.brand_name,
+          serving_description: food.serving_description,
+          serving_mass_g: food.serving_mass_g,
+          serving_volume_ml: food.serving_volume_ml,
+          calories: food.calories || 0,
+          protein_g: food.protein_g || 0,
+          fat_g: food.fat_g || 0,
+          carbs_g: food.carbs_g || 0,
+          sugar_g: food.sugar_g || 0,
+          sodium_mg: food.sodium_mg || 0,
+          cholesterol_mg: food.cholesterol_mg || 0,
+        });
+      });
+    }
+
     // Convert Supabase data to application format
-    return data
-      .filter((log) => log.food)
-      .map((log) => ({
-        id: log.id as string,
-        user_id: user.id, // Use directly as UUID string
-        food_id: log.food_id as string,
-        servings_consumed: Number(log.servings_consumed),
-        consumed_date: new Date(log.consumed_date).getTime(),
-        food: log.food as Food,
-      })) as (FoodLog & { food: Food })[];
+    return foodLogsData
+      .map((log) => {
+        const food = foodsMap.get(log.food_id);
+        if (!food) return null; // Skip logs where food doesn't exist
+
+        return {
+          id: log.id as string,
+          user_id: user.id, // Use directly as UUID string
+          food_id: log.food_id as string,
+          servings_consumed: Number(log.servings_consumed),
+          consumed_date: new Date(log.consumed_date).getTime(),
+          food: food as Food,
+        };
+      })
+      .filter((log) => log !== null) as (FoodLog & { food: Food })[];
   },
 
   async addFoodLog(log: Omit<FoodLog, "id" | "food">): Promise<FoodLog | null> {
@@ -147,6 +212,7 @@ export const supabaseUtils = {
       consumed_date: new Date(data.consumed_date).getTime(), // convert to Unix timestamp
     };
   },
+
   async updateFoodLog(
     logId: string,
     servings_consumed: number

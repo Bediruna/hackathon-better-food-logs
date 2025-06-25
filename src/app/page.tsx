@@ -22,38 +22,67 @@ export default function Home() {
   const [selectedFood, setSelectedFood] = useState<Food | null>(null);
   const [editingLog, setEditingLog] = useState<FoodLog | null>(null);
   const [deletingLog, setDeletingLog] = useState<FoodLog | null>(null);
+
   useEffect(() => {
+    const SAMPLE_FOODS_VERSION = "v1";
+
     const loadData = async () => {
-      // Add a version to your sampleFoods
-      const SAMPLE_FOODS_VERSION = "v1"; // Increment this when you update sampleFoods
-
-      const storedVersion = localStorage.getItem("sampleFoodsVersion");
-      let storedFoods = localStorageUtils.getFoods();
-
-      if (storedFoods.length === 0 || storedVersion !== SAMPLE_FOODS_VERSION) {
-        localStorageUtils.saveFoods(sampleFoods);
-        localStorage.setItem("sampleFoodsVersion", SAMPLE_FOODS_VERSION);
-        storedFoods = sampleFoods;
-      }
-      setFoods(storedFoods); // Load food logs based on authentication status
       if (user) {
-        // User is signed in, load from Supabase
+        // 🟢 Signed in: Load from Supabase
+        let supabaseFoods = await supabaseUtils.getFoods();
+
+        if (supabaseFoods.length === 0) {
+          console.log("No foods found in Supabase, adding sample foods...");
+          for (const sampleFood of sampleFoods) {
+            await supabaseUtils.addFood(sampleFood); // includes `id`
+          }
+          supabaseFoods = await supabaseUtils.getFoods();
+        }
+
+        // 🟢 Optional: Sync unsynced local foods (excluding predefined samples)
+        const localFoods = localStorageUtils.getFoods();
+        const customFoods = localFoods.filter(
+          (lf) => !sampleFoods.find((sf) => sf.id === lf.id)
+        );
+        for (const food of customFoods) {
+          const exists = supabaseFoods.some((sf) => sf.id === food.id);
+          if (!exists) {
+            await supabaseUtils.addFood(food);
+          }
+        }
+
+        // 🔁 Refresh and set
+        const refreshedFoods = await supabaseUtils.getFoods();
+        setFoods(refreshedFoods);
+
+        // Load food logs
         const supabaseLogs = await supabaseUtils.getFoodLogs();
         setFoodLogs(supabaseLogs);
       } else {
-        // User is not signed in, load from localStorage
+        // 🔴 Not signed in: Use localStorage
+        const storedVersion = localStorage.getItem("sampleFoodsVersion");
+        let localFoods = localStorageUtils.getFoods();
+
+        if (localFoods.length === 0 || storedVersion !== SAMPLE_FOODS_VERSION) {
+          localStorageUtils.saveFoods(sampleFoods);
+          localStorage.setItem("sampleFoodsVersion", SAMPLE_FOODS_VERSION);
+          localFoods = sampleFoods;
+        }
+
+        setFoods(localFoods);
+
+        // Load logs with food references
         const logs = localStorageUtils.getFoodLogs();
-        const logsWithFoodData = logs.map((log) => ({
+        const logsWithFood = logs.map((log) => ({
           ...log,
-          food: storedFoods.find((food) => food.id === log.food_id),
+          food: localFoods.find((f) => f.id === log.food_id),
         }));
-        setFoodLogs(logsWithFoodData);
+        setFoodLogs(logsWithFood);
       }
     };
 
     loadData();
   }, [user]);
-
   const handleSelectFood = (food: Food) => {
     setSelectedFood(food);
   };
@@ -82,28 +111,31 @@ export default function Home() {
         console.error("Error saving to Supabase:", error);
         // Fallback to localStorage on error
         localStorageUtils.addFoodLog(newLog);
-        const logWithFood = { ...newLog, id: Date.now(), food };
+        const logWithFood = { ...newLog, id: Date.now().toString(), food };
         setFoodLogs((prev) => [logWithFood, ...prev]);
         console.log("Food log saved locally as fallback");
       }
     } else {
       // User is not signed in, save to localStorage
       localStorageUtils.addFoodLog(newLog);
-      const logWithFood = { ...newLog, id: Date.now(), food };
+      const logWithFood = { ...newLog, id: Date.now().toString(), food };
       setFoodLogs((prev) => [logWithFood, ...prev]);
       console.log("Food log saved locally (user not signed in)");
     }
 
     setSelectedFood(null);
   };
+
   const handleCancelFoodEntry = () => {
     setSelectedFood(null);
   };
+
   const handleEditLog = (log: FoodLog) => {
     console.log("Opening edit modal for log:", log);
     setEditingLog(log);
   };
-  const handleSaveEditLog = async (logId: number, newServings: number) => {
+
+  const handleSaveEditLog = async (logId: string, newServings: number) => {
     console.log(
       "Attempting to save edit for log ID:",
       logId,
@@ -174,7 +206,7 @@ export default function Home() {
     setDeletingLog(log);
   };
 
-  const handleConfirmDeleteLog = async (logId: number) => {
+  const handleConfirmDeleteLog = async (logId: string) => {
     if (user) {
       // User is signed in, delete from Supabase
       try {
@@ -234,6 +266,7 @@ export default function Home() {
           results.
         </p>
       </div>
+
       {/* Authentication Status */}
       {user && (
         <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
@@ -243,6 +276,7 @@ export default function Home() {
           </p>
         </div>
       )}
+
       {/* Search Section */}
       <div className="space-y-4">
         <SearchBar
@@ -260,7 +294,8 @@ export default function Home() {
             <span>Create New Food Record</span>
           </Link>
         </div>
-      </div>{" "}
+      </div>
+
       {/* Food Entry Modal */}
       {selectedFood && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
@@ -273,6 +308,7 @@ export default function Home() {
           </div>
         </div>
       )}
+
       {/* Edit Food Log Modal */}
       {editingLog && (
         <EditFoodLogModal
@@ -281,6 +317,7 @@ export default function Home() {
           onCancel={handleCancelEditLog}
         />
       )}
+
       {/* Delete Confirmation Modal */}
       {deletingLog && (
         <DeleteConfirmModal
@@ -289,12 +326,14 @@ export default function Home() {
           onCancel={handleCancelDeleteLog}
         />
       )}
+
       {/* Today's Summary */}
       <TodaysSummary
         todaysLogs={todaysLogs}
         onEditLog={handleEditLog}
         onDeleteLog={handleDeleteLog}
       />
+
       {/* Quick Stats */}
       <div className="grid grid-cols-2 gap-4">
         <div className="bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-xl p-4 text-center">
