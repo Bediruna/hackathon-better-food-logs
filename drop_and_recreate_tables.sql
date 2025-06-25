@@ -1,9 +1,33 @@
--- Supabase Database Setup for Food Logs Application
--- Run this SQL in your Supabase SQL Editor
+-- Drop and Recreate Tables Script
+-- WARNING: This will delete ALL existing data!
+-- Make sure to backup your data first if needed.
 
--- Create the foods table
+-- Step 1: Drop existing tables (order matters due to foreign keys)
+DROP TABLE IF EXISTS public.food_logs CASCADE;
+DROP TABLE IF EXISTS public.foods CASCADE;
+DROP TABLE IF EXISTS public.users CASCADE;
+
+-- Step 2: Drop any remaining triggers and functions
+DROP TRIGGER IF EXISTS handle_foods_updated_at ON public.foods;
+DROP TRIGGER IF EXISTS handle_food_logs_updated_at ON public.food_logs;
+DROP TRIGGER IF EXISTS handle_users_updated_at ON public.users;
+DROP FUNCTION IF EXISTS public.handle_updated_at();
+
+-- Step 3: Recreate tables with new UUID structure
+
+-- Create the users table
+CREATE TABLE IF NOT EXISTS public.users (
+    id TEXT PRIMARY KEY, -- Firebase UID as string
+    display_name TEXT NOT NULL,
+    email TEXT NOT NULL UNIQUE,
+    photo_url TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create the foods table with TEXT UUID
 CREATE TABLE IF NOT EXISTS public.foods (
-    id TEXT PRIMARY KEY, -- Changed to TEXT to match UUID format
+    id TEXT PRIMARY KEY, -- UUID as TEXT
     name TEXT NOT NULL,
     brand_name TEXT,
     serving_description TEXT NOT NULL,
@@ -20,26 +44,17 @@ CREATE TABLE IF NOT EXISTS public.foods (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Create the users table
-CREATE TABLE IF NOT EXISTS public.users (
-    id TEXT PRIMARY KEY, -- Firebase UID as string
-    display_name TEXT NOT NULL,
-    email TEXT NOT NULL UNIQUE,
-    photo_url TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- Create the food_logs table
+-- Create the food_logs table with TEXT UUID
 CREATE TABLE IF NOT EXISTS public.food_logs (
-    id TEXT PRIMARY KEY, -- Changed to TEXT to match UUID format
+    id TEXT PRIMARY KEY, -- UUID as TEXT
     user_id TEXT NOT NULL, -- Firebase UID as string
-    food_id TEXT NOT NULL, -- Changed to TEXT to match UUID format
+    food_id TEXT NOT NULL, -- UUID as TEXT
     servings_consumed NUMERIC NOT NULL DEFAULT 1,
     consumed_date TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-      -- Foreign key constraint
+    
+    -- Foreign key constraint
     CONSTRAINT fk_food_logs_food_id 
         FOREIGN KEY (food_id) 
         REFERENCES public.foods(id) 
@@ -52,19 +67,19 @@ CREATE TABLE IF NOT EXISTS public.food_logs (
         ON DELETE CASCADE
 );
 
--- Create indexes for better performance
+-- Step 4: Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_food_logs_user_id ON public.food_logs(user_id);
 CREATE INDEX IF NOT EXISTS idx_food_logs_consumed_date ON public.food_logs(consumed_date);
 CREATE INDEX IF NOT EXISTS idx_food_logs_food_id ON public.food_logs(food_id);
 CREATE INDEX IF NOT EXISTS idx_foods_name ON public.foods(name);
 CREATE INDEX IF NOT EXISTS idx_users_email ON public.users(email);
 
--- Enable Row Level Security (RLS)
+-- Step 5: Enable Row Level Security (RLS)
 ALTER TABLE public.foods ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.food_logs ENABLE ROW LEVEL SECURITY;
 
--- RLS Policies for foods table
+-- Step 6: RLS Policies for foods table
 -- Allow all users to read foods (foods are shared across users)
 CREATE POLICY "Allow read access to all foods" ON public.foods
     FOR SELECT USING (true);
@@ -77,7 +92,7 @@ CREATE POLICY "Allow authenticated users to insert foods" ON public.foods
 CREATE POLICY "Allow users to update foods" ON public.foods
     FOR UPDATE USING (auth.role() = 'authenticated');
 
--- RLS Policies for users table
+-- Step 7: RLS Policies for users table
 -- Users can only see their own profile
 CREATE POLICY "Users can view own profile" ON public.users
     FOR SELECT USING (auth.uid()::text = id);
@@ -90,7 +105,7 @@ CREATE POLICY "Users can insert own profile" ON public.users
 CREATE POLICY "Users can update own profile" ON public.users
     FOR UPDATE USING (auth.uid()::text = id);
 
--- RLS Policies for food_logs table
+-- Step 8: RLS Policies for food_logs table
 -- Users can only see their own food logs
 CREATE POLICY "Users can view own food logs" ON public.food_logs
     FOR SELECT USING (auth.uid()::text = user_id);
@@ -107,7 +122,7 @@ CREATE POLICY "Users can update own food logs" ON public.food_logs
 CREATE POLICY "Users can delete own food logs" ON public.food_logs
     FOR DELETE USING (auth.uid()::text = user_id);
 
--- Create updated_at trigger function
+-- Step 9: Create updated_at trigger function
 CREATE OR REPLACE FUNCTION public.handle_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -116,7 +131,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Create triggers for updated_at
+-- Step 10: Create triggers for updated_at
 CREATE TRIGGER handle_foods_updated_at
     BEFORE UPDATE ON public.foods
     FOR EACH ROW
@@ -132,11 +147,5 @@ CREATE TRIGGER handle_users_updated_at
     FOR EACH ROW
     EXECUTE FUNCTION public.handle_updated_at();
 
--- Insert some sample foods (optional)
-INSERT INTO public.foods (name, brand_name, serving_description, serving_mass_g, calories, protein_g, fat_g, carbs_g, sugar_g, sodium_mg, cholesterol_mg) VALUES
-('Banana', 'Generic', '1 medium banana', 118, 105, 1.3, 0.4, 27, 14.4, 1, 0),
-('Chicken Breast', 'Generic', '100g cooked', 100, 165, 31, 3.6, 0, 0, 74, 85),
-('Brown Rice', 'Generic', '1 cup cooked', 195, 216, 5, 1.8, 45, 0.7, 10, 0),
-('Greek Yogurt', 'Generic', '1 cup plain', 245, 130, 23, 0, 9, 9, 68, 5),
-('Almonds', 'Generic', '1 oz (28g)', 28, 164, 6, 14, 6, 1.2, 0, 0)
-ON CONFLICT DO NOTHING;
+-- Done! Tables are now recreated with UUID structure
+SELECT 'Tables successfully recreated with UUID structure!' as status;

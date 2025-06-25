@@ -113,7 +113,7 @@ export const supabaseUtils = {
       .filter((log) => log !== null) as (FoodLog & { food: Food })[];
   },
 
-  async addFoodLog(log: Omit<FoodLog, "id" | "food">): Promise<FoodLog | null> {
+  async addFoodLog(log: Omit<FoodLog, "food">): Promise<FoodLog | null> {
     // Get the current authenticated user
     const {
       data: { user },
@@ -132,6 +132,7 @@ export const supabaseUtils = {
 
     // Map the log fields to match Supabase column names
     const supabaseLog = {
+      id: log.id, // Preserve the UUID from the client
       user_id: user.id, // Use Supabase user ID (UUID string)
       food_id: log.food_id,
       servings_consumed: log.servings_consumed,

@@ -1,6 +1,4 @@
 "use client";
-import { v4 as uuidv4 } from "uuid";
-
 import FoodLogEntry from "@/components/FoodLogEntry";
 import SearchBar from "@/components/SearchBar";
 import TodaysSummary from "@/components/TodaysSummary";
@@ -10,10 +8,12 @@ import { Food, FoodLog } from "@/types";
 import { localStorageUtils } from "@/utils/localStorage";
 import { sampleFoods } from "@/utils/sampleData";
 import { supabaseUtils } from "@/utils/supabaseUtils";
+import { refreshUserData, ensureSampleFoodsConsistency } from "@/utils/dataConsistency";
 import { useAuth } from "@/contexts/AuthContext";
-import { Plus, Zap } from "lucide-react";
+import { Plus, Zap, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { v4 as uuidv4 } from "uuid";
 
 export default function Home() {
   const { user } = useAuth();
@@ -22,32 +22,50 @@ export default function Home() {
   const [selectedFood, setSelectedFood] = useState<Food | null>(null);
   const [editingLog, setEditingLog] = useState<FoodLog | null>(null);
   const [deletingLog, setDeletingLog] = useState<FoodLog | null>(null);
+  const [dataLoading, setDataLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
   useEffect(() => {
     const loadData = async () => {
-      // Add a version to your sampleFoods
-      const SAMPLE_FOODS_VERSION = "v1"; // Increment this when you update sampleFoods
+      setDataLoading(true);
+      
+      try {
+        // Always load foods (sample foods are ensured by AuthContext)
+        const storedFoods = localStorageUtils.getFoods();
+        if (storedFoods.length === 0) {
+          // Fallback to sample foods if localStorage is empty
+          await ensureSampleFoodsConsistency(false);
+          setFoods(sampleFoods);
+        } else {
+          setFoods(storedFoods);
+        }
 
-      const storedVersion = localStorage.getItem("sampleFoodsVersion");
-      let storedFoods = localStorageUtils.getFoods();
-
-      if (storedFoods.length === 0 || storedVersion !== SAMPLE_FOODS_VERSION) {
-        localStorageUtils.saveFoods(sampleFoods);
-        localStorage.setItem("sampleFoodsVersion", SAMPLE_FOODS_VERSION);
-        storedFoods = sampleFoods;
-      }
-      setFoods(storedFoods); // Load food logs based on authentication status
-      if (user) {
-        // User is signed in, load from Supabase
-        const supabaseLogs = await supabaseUtils.getFoodLogs();
-        setFoodLogs(supabaseLogs);
-      } else {
-        // User is not signed in, load from localStorage
-        const logs = localStorageUtils.getFoodLogs();
-        const logsWithFoodData = logs.map((log) => ({
-          ...log,
-          food: storedFoods.find((food) => food.id === log.food_id),
-        }));
-        setFoodLogs(logsWithFoodData);
+        // Load food logs based on authentication status
+        if (user) {
+          console.log("👤 Loading data for authenticated user...");
+          // User is signed in, load from Supabase with consistency checks
+          const supabaseLogs = await refreshUserData(user.id);
+          setFoodLogs(supabaseLogs);
+          console.log(`📊 Loaded ${supabaseLogs.length} food logs from cloud`);
+        } else {
+          console.log("👤 Loading data for anonymous user...");
+          // User is not signed in, load from localStorage
+          const logs = localStorageUtils.getFoodLogs();
+          const currentFoods = storedFoods.length > 0 ? storedFoods : sampleFoods;
+          const logsWithFoodData = logs.map((log) => ({
+            ...log,
+            food: currentFoods.find((food) => food.id === log.food_id),
+          })).filter((log): log is FoodLog & { food: Food } => log.food !== undefined);
+          
+          setFoodLogs(logsWithFoodData);
+          console.log(`📊 Loaded ${logsWithFoodData.length} food logs from localStorage`);
+        }
+      } catch (error) {
+        console.error("Error loading data:", error);
+        // Fallback to empty state
+        setFoodLogs([]);
+      } finally {
+        setDataLoading(false);
       }
     };
 
@@ -60,7 +78,7 @@ export default function Home() {
 
   const handleLogFood = async (food: Food, servings: number) => {
     const newLog = {
-      id: uuidv4(), // generate UUID locally in case of local fallback
+      id: uuidv4(), // generate UUID
       user_id: user?.id ?? "anonymous", // fall back to "anonymous" or another default UUID-like string
       food_id: food.id,
       servings_consumed: servings,
@@ -77,17 +95,19 @@ export default function Home() {
           console.log("Food log successfully saved to cloud");
         } else {
           throw new Error("Failed to save to Supabase");
-        }      } catch (error) {
+        }
+      } catch (error) {
         console.error("Error saving to Supabase:", error);
         // Fallback to localStorage on error
-        localStorageUtils.addFoodLog(newLog);
-        const logWithFood = { ...newLog, id: Date.now().toString(), food };
+        const savedLocalLog = localStorageUtils.addFoodLog(newLog);
+        const logWithFood = { ...savedLocalLog, food };
         setFoodLogs((prev) => [logWithFood, ...prev]);
         console.log("Food log saved locally as fallback");
-      }    } else {
+      }
+    } else {
       // User is not signed in, save to localStorage
-      localStorageUtils.addFoodLog(newLog);
-      const logWithFood = { ...newLog, id: Date.now().toString(), food };
+      const savedLocalLog = localStorageUtils.addFoodLog(newLog);
+      const logWithFood = { ...savedLocalLog, food };
       setFoodLogs((prev) => [logWithFood, ...prev]);
       console.log("Food log saved locally (user not signed in)");
     }
@@ -206,6 +226,22 @@ export default function Home() {
     setDeletingLog(null);
   };
 
+  const handleRefreshData = async () => {
+    if (!user) return;
+    
+    setRefreshing(true);
+    try {
+      console.log("🔄 Manually refreshing user data...");
+      const refreshedLogs = await refreshUserData(user.id);
+      setFoodLogs(refreshedLogs);
+      console.log(`✅ Refreshed ${refreshedLogs.length} food logs`);
+    } catch (error) {
+      console.error("Error refreshing data:", error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   // Get today's logs
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -233,30 +269,76 @@ export default function Home() {
       {/* Authentication Status */}
       {user && (
         <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-          <p className="text-sm text-green-700">
-            ✅ Signed in as {user.user_metadata?.full_name || user.email} - Food
-            logs are being saved to the cloud
-          </p>
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-green-700">
+              ✅ Signed in as {user.user_metadata?.full_name || user.email} - Food
+              logs are being saved to the cloud
+            </p>
+            <button
+              onClick={handleRefreshData}
+              disabled={refreshing}
+              className="inline-flex items-center space-x-1 px-3 py-1 text-xs bg-green-100 hover:bg-green-200 text-green-700 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Refresh data from cloud"
+            >
+              <RefreshCw size={12} className={refreshing ? "animate-spin" : ""} />
+              <span>Refresh</span>
+            </button>
+          </div>
         </div>
       )}
-      {/* Search Section */}
-      <div className="space-y-4">
-        <SearchBar
-          foods={foods}
-          onSelectFood={handleSelectFood}
-          placeholder="Search foods to log..."
-        />
 
-        <div className="flex justify-center">
-          <Link
-            href="/create"
-            className="inline-flex items-center space-x-2 px-6 py-3 bg-white/80 backdrop-blur-sm border border-gray-200 rounded-lg hover:shadow-md transition-all duration-200 text-gray-700 hover:text-emerald-600"
-          >
-            <Plus size={16} />
-            <span>Create New Food Record</span>
-          </Link>
+      {/* Loading State */}
+      {dataLoading && (
+        <div className="flex items-center justify-center py-12">
+          <div className="flex items-center space-x-3">
+            <div className="animate-spin rounded-full h-6 w-6 border-2 border-emerald-500 border-t-transparent"></div>
+            <span className="text-gray-600">Loading your food data...</span>
+          </div>
         </div>
-      </div>{" "}
+      )}
+
+      {/* Main Content - Only show when not loading */}
+      {!dataLoading && (
+        <>
+          {/* Search Section */}
+          <div className="space-y-4">
+            <SearchBar
+              foods={foods}
+              onSelectFood={handleSelectFood}
+              placeholder="Search foods to log..."
+            />
+
+            <div className="flex justify-center">
+              <Link
+                href="/create"
+                className="inline-flex items-center space-x-2 px-6 py-3 bg-white/80 backdrop-blur-sm border border-gray-200 rounded-lg hover:shadow-md transition-all duration-200 text-gray-700 hover:text-emerald-600"
+              >
+                <Plus size={16} />
+                <span>Create New Food Record</span>
+              </Link>
+            </div>
+          </div>
+
+          {/* Today's Summary */}
+          <TodaysSummary
+            todaysLogs={todaysLogs}
+            onEditLog={handleEditLog}
+            onDeleteLog={handleDeleteLog}
+          />
+
+          {/* Quick Stats */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-xl p-4 text-center">
+              <p className="text-2xl font-bold">{todaysLogs.length}</p>
+              <p className="text-emerald-100 text-sm">Meals Today</p>
+            </div>
+            <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl p-4 text-center">
+              <p className="text-2xl font-bold">{foods.length}</p>
+              <p className="text-blue-100 text-sm">Foods Available</p>
+            </div>
+          </div>
+        </>
+      )}{" "}
       {/* Food Entry Modal */}
       {selectedFood && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
@@ -285,23 +367,6 @@ export default function Home() {
           onCancel={handleCancelDeleteLog}
         />
       )}
-      {/* Today's Summary */}
-      <TodaysSummary
-        todaysLogs={todaysLogs}
-        onEditLog={handleEditLog}
-        onDeleteLog={handleDeleteLog}
-      />
-      {/* Quick Stats */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-xl p-4 text-center">
-          <p className="text-2xl font-bold">{todaysLogs.length}</p>
-          <p className="text-emerald-100 text-sm">Meals Today</p>
-        </div>
-        <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl p-4 text-center">
-          <p className="text-2xl font-bold">{foods.length}</p>
-          <p className="text-blue-100 text-sm">Foods Available</p>
-        </div>
-      </div>
     </div>
   );
 }
