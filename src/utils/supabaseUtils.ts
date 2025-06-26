@@ -1,7 +1,37 @@
 import { supabase } from "@/lib/supabaseClient";
 import { Food, FoodLog } from "@/types";
+import type { User } from "@supabase/supabase-js";
 
 export const supabaseUtils = {
+  // ✅ USER METHODS
+  async ensureUserExists(user: User): Promise<void> {
+    try {
+      // Try to insert the user record using upsert (INSERT ... ON CONFLICT DO NOTHING)
+      const { error } = await supabase.from("users").upsert(
+        {
+          id: user.id,
+          display_name: user.user_metadata?.full_name || user.email || "Unknown User",
+          email: user.email || "",
+          photo_url: user.user_metadata?.avatar_url || null,
+        },
+        { 
+          onConflict: "id",
+          ignoreDuplicates: true 
+        }
+      );
+
+      if (error) {
+        console.error("Error ensuring user exists:", error);
+        // Continue anyway - the user might exist or the constraint might be relaxed
+      } else {
+        console.log("User record ensured for:", user.id);
+      }
+    } catch (error) {
+      console.error("Exception in ensureUserExists:", error);
+      // Continue anyway
+    }
+  },
+
   // ✅ FOOD METHODS
   async getFoods(): Promise<Food[]> {
     const { data, error } = await supabase.from("foods").select("*");
@@ -93,6 +123,9 @@ export const supabaseUtils = {
       });
       return [];
     }
+
+    // Ensure user record exists in the users table
+    await this.ensureUserExists(user);
 
     // First, get the food logs
     const { data: foodLogsData, error: logsError } = await supabase
@@ -192,6 +225,9 @@ export const supabaseUtils = {
       return null;
     }
 
+    // Ensure user record exists in the users table
+    await this.ensureUserExists(user);
+
     // Map the log fields to match Supabase column names
     const supabaseLog = {
       user_id: user.id, // Use Supabase user ID (UUID string)
@@ -200,6 +236,8 @@ export const supabaseUtils = {
       consumed_date: new Date(log.consumed_date).toISOString(), // convert from Unix timestamp to ISO
     };
 
+    console.log("Attempting to insert food log:", supabaseLog);
+
     const { data, error } = await supabase
       .from("food_logs")
       .insert(supabaseLog)
@@ -207,15 +245,24 @@ export const supabaseUtils = {
       .single();
 
     if (error) {
-      console.error("Error adding food log:", error);
+      console.error("Error adding food log:", {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+        fullError: error,
+        attemptedData: supabaseLog,
+      });
       return null;
     }
 
+    console.log("Successfully inserted food log:", data);
+
     // Convert back to application format
     return {
-      id: data.id, // UUID
+      id: data.id.toString(), // Ensure it's a string
       user_id: data.user_id,
-      food_id: data.food_id,
+      food_id: data.food_id.toString(), // Ensure it's a string
       servings_consumed: data.servings_consumed,
       consumed_date: new Date(data.consumed_date).getTime(), // convert to Unix timestamp
     };
