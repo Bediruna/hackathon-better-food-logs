@@ -53,7 +53,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (user) {
-      syncLocalStorageToSupabase(user.id);
+      // Sync local storage to Supabase in the background
+      syncLocalStorageToSupabase(user.id).catch((error) => {
+        console.error('Background sync failed:', error);
+        // Don't throw the error as this shouldn't block the user experience
+      });
     }
   }, [user]);
 

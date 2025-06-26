@@ -16,10 +16,15 @@ export default function SearchBar({ foods, onSelectFood, placeholder = "Search f
 
   useEffect(() => {
     if (query.trim()) {
-      const filtered = foods.filter(food =>
-        food.name.toLowerCase().includes(query.toLowerCase()) ||
-        (food.brand_name && food.brand_name.toLowerCase().includes(query.toLowerCase()))
-      );
+      const filtered = foods.filter(food => {
+        // Ensure food has required properties before filtering
+        if (!food.name || typeof food.name !== 'string') {
+          return false;
+        }
+        
+        return food.name.toLowerCase().includes(query.toLowerCase()) ||
+               (food.brand_name && food.brand_name.toLowerCase().includes(query.toLowerCase()));
+      });
       setFilteredFoods(filtered);
       setIsOpen(true);
     } else {

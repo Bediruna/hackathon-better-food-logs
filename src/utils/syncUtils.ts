@@ -16,8 +16,23 @@ export async function syncLocalStorageToSupabase(userId: string) {
   }
 
   try {
+    // Validate local foods data before syncing
+    const validLocalFoods = localFoods.filter((food) => {
+      if (!food.name || typeof food.name !== 'string') {
+        console.warn('Filtering out food with invalid name:', food.id);
+        return false;
+      }
+      if (!food.serving_description || typeof food.serving_description !== 'string') {
+        console.warn('Filtering out food with invalid serving_description:', food.id);
+        return false;
+      }
+      return true;
+    });
+
+    console.log(`Validated ${validLocalFoods.length} out of ${localFoods.length} local foods`);
+
     // 1. Sync Foods first
-    if (localFoods.length > 0) {
+    if (validLocalFoods.length > 0) {
       console.log("Syncing foods to Supabase...");
       
       // Fetch existing foods from Supabase
@@ -33,12 +48,17 @@ export async function syncLocalStorageToSupabase(userId: string) {
       // Create a set of existing food signatures for duplicate detection
       const existingFoodSignatures = new Set(
         existingFoods?.map((f) => 
-          `${f.name.toLowerCase().trim()}-${(f.brand_name || '').toLowerCase().trim()}-${f.serving_description.toLowerCase().trim()}-${f.serving_mass_g || 0}-${f.serving_volume_ml || 0}`
+          `${(f.name || '').toLowerCase().trim()}-${(f.brand_name || '').toLowerCase().trim()}-${(f.serving_description || '').toLowerCase().trim()}-${f.serving_mass_g || 0}-${f.serving_volume_ml || 0}`
         ) || []
       );
 
       // Filter out foods that already exist in Supabase
-      const newFoods = localFoods.filter((food) => {
+      const newFoods = validLocalFoods.filter((food) => {
+        // Skip foods with missing required fields (additional safety check)
+        if (!food.name || !food.serving_description) {
+          console.warn('Skipping food with missing required fields:', food);
+          return false;
+        }
         const signature = `${food.name.toLowerCase().trim()}-${(food.brand_name || '').toLowerCase().trim()}-${food.serving_description.toLowerCase().trim()}-${food.serving_mass_g || 0}-${food.serving_volume_ml || 0}`;
         return !existingFoodSignatures.has(signature);
       });
@@ -92,6 +112,11 @@ export async function syncLocalStorageToSupabase(userId: string) {
     // Create a mapping from local food signature to Supabase food ID
     const foodIdMap = new Map<string, string>();
     allFoods?.forEach((food) => {
+      // Skip foods with missing required fields
+      if (!food.name || !food.serving_description) {
+        console.warn('Skipping Supabase food with missing required fields:', food);
+        return;
+      }
       const signature = `${food.name.toLowerCase().trim()}-${(food.brand_name || '').toLowerCase().trim()}-${food.serving_description.toLowerCase().trim()}-${food.serving_mass_g || 0}-${food.serving_volume_ml || 0}`;
       foodIdMap.set(signature, food.id);
     });
@@ -127,9 +152,15 @@ export async function syncLocalStorageToSupabase(userId: string) {
           servings_consumed: number;
         } | null => {
           // Find the corresponding local food
-          const localFood = localFoods.find((f) => f.id === log.food_id);
+          const localFood = validLocalFoods.find((f) => f.id === log.food_id);
           if (!localFood) {
             console.warn(`Local food not found for log with food_id: ${log.food_id}`);
+            return null;
+          }
+
+          // Skip foods with missing required fields
+          if (!localFood.name || !localFood.serving_description) {
+            console.warn('Skipping log for food with missing required fields:', localFood);
             return null;
           }
 

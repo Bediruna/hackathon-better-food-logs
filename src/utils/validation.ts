@@ -151,11 +151,23 @@ export const checkForDuplicateFood = (
   newFood: FoodValidationData,
   existingFoods: Array<{ name: string; brand_name?: string; serving_description: string; serving_mass_g?: number }>
 ): boolean => {
+  // Safety check for newFood properties
+  if (!newFood.name || !newFood.serving_description) {
+    console.warn('Cannot check for duplicate - newFood missing required properties:', newFood);
+    return false;
+  }
+
   const normalizedName = newFood.name.trim().toLowerCase();
   const normalizedBrand = newFood.brand_name?.trim().toLowerCase() || '';
   const normalizedServing = newFood.serving_description.trim().toLowerCase();
 
   return existingFoods.some(food => {
+    // Safety check for existing food properties
+    if (!food.name || !food.serving_description) {
+      console.warn('Skipping existing food with missing required properties:', food);
+      return false;
+    }
+
     const existingName = food.name.trim().toLowerCase();
     const existingBrand = food.brand_name?.trim().toLowerCase() || '';
     const existingServing = food.serving_description.trim().toLowerCase();
@@ -166,7 +178,7 @@ export const checkForDuplicateFood = (
       (normalizedName === existingName && 
        normalizedServing === existingServing &&
        Math.abs((newFood.serving_mass_g || 0) - (existingFoods.find(f => 
-         f.name.trim().toLowerCase() === existingName
+         f.name && f.name.trim().toLowerCase() === existingName
        )?.serving_mass_g || 0)) < 5)
     );
   });
