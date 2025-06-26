@@ -149,7 +149,7 @@ export const isSpammy = (text: string): boolean => {
 
 export const checkForDuplicateFood = (
   newFood: FoodValidationData,
-  existingFoods: Array<{ name: string; brand_name?: string; serving_description: string }>
+  existingFoods: Array<{ name: string; brand_name?: string; serving_description: string; serving_mass_g?: number }>
 ): boolean => {
   const normalizedName = newFood.name.trim().toLowerCase();
   const normalizedBrand = newFood.brand_name?.trim().toLowerCase() || '';
@@ -167,7 +167,7 @@ export const checkForDuplicateFood = (
        normalizedServing === existingServing &&
        Math.abs((newFood.serving_mass_g || 0) - (existingFoods.find(f => 
          f.name.trim().toLowerCase() === existingName
-       ) as any)?.serving_mass_g || 0) < 5)
+       )?.serving_mass_g || 0)) < 5)
     );
   });
 };

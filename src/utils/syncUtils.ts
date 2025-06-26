@@ -1,6 +1,5 @@
 import { supabase } from "@/lib/supabaseClient";
 import { localStorageUtils } from "@/utils/localStorage";
-import { Food, FoodLog } from "@/types";
 
 export async function syncLocalStorageToSupabase(userId: string) {
   const localFoods = localStorageUtils.getFoods();
@@ -49,19 +48,22 @@ export async function syncLocalStorageToSupabase(userId: string) {
       // Insert new foods to Supabase
       if (newFoods.length > 0) {
         // Convert local foods to Supabase format (remove local IDs)
-        const foodsToInsert = newFoods.map(({ id, ...food }) => ({
-          ...food,
-          // Ensure all numeric fields are properly formatted
-          serving_mass_g: food.serving_mass_g || null,
-          serving_volume_ml: food.serving_volume_ml || null,
-          calories: food.calories || 0,
-          protein_g: food.protein_g || 0,
-          fat_g: food.fat_g || 0,
-          carbs_g: food.carbs_g || 0,
-          sugar_g: food.sugar_g || 0,
-          sodium_mg: food.sodium_mg || 0,
-          cholesterol_mg: food.cholesterol_mg || 0,
-        }));
+        const foodsToInsert = newFoods.map(({ id, ...food }) => {
+          void id; // Explicitly indicate we're not using this variable
+          return {
+            ...food,
+            // Ensure all numeric fields are properly formatted
+            serving_mass_g: food.serving_mass_g || null,
+            serving_volume_ml: food.serving_volume_ml || null,
+            calories: food.calories || 0,
+            protein_g: food.protein_g || 0,
+            fat_g: food.fat_g || 0,
+            carbs_g: food.carbs_g || 0,
+            sugar_g: food.sugar_g || 0,
+            sodium_mg: food.sodium_mg || 0,
+            cholesterol_mg: food.cholesterol_mg || 0,
+          };
+        });
 
         const { data: insertedFoods, error: insertFoodsError } = await supabase
           .from("foods")
@@ -158,7 +160,7 @@ export async function syncLocalStorageToSupabase(userId: string) {
       console.log(`Found ${logsToInsert.length} new food logs to sync`);
 
       if (logsToInsert.length > 0) {
-        const { data: insertedLogs, error: insertLogsError } = await supabase
+        const { error: insertLogsError } = await supabase
           .from("food_logs")
           .insert(logsToInsert);
 

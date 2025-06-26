@@ -35,6 +35,7 @@ export default function Home() {
           console.log("No foods found in Supabase, adding sample foods...");
           for (const sampleFood of sampleFoods) {
             const { id, ...foodWithoutId } = sampleFood;
+            void id; // Explicitly indicate we're not using this variable
             await supabaseUtils.addFood(foodWithoutId);
           }
           // Reload foods after adding samples
