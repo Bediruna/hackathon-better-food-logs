@@ -70,10 +70,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signUp = async (email: string, password: string, name: string) => {
-    const {
-      data: { user },
-      error,
-    } = await supabase.auth.signUp({
+    const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -84,23 +81,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     if (error) throw error;
-
-    // Insert into the custom users table if sign up was successful
-    if (user) {
-      const { error: insertError } = await supabase.from("users").insert([
-        {
-          id: user.id,
-          display_name: name,
-          email: user.email,
-          photo_url: "https://avatar.iran.liara.run/public/boy?username=Ash",
-        },
-      ]);
-
-      if (insertError) {
-        console.error("Error inserting user into 'users' table:", insertError);
-        throw insertError;
-      }
-    }
   };
 
   const signInWithGoogle = async () => {
