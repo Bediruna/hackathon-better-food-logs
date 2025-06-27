@@ -84,25 +84,35 @@ export default function AuthPage() {  const router = useRouter();
       router.push("/");
     } catch (error: unknown) {
       console.error("Authentication error:", error);
-      // Handle Firebase auth errors
+      // Handle Supabase auth errors
       let errorMessage = "An error occurred. Please try again.";
+      
       if (
         typeof error === "object" &&
         error !== null &&
-        "code" in error &&
-        typeof (error as { code?: unknown }).code === "string"
+        "message" in error &&
+        typeof (error as { message?: unknown }).message === "string"
       ) {
-        const code = (error as { code: string }).code;
-        if (code === "auth/user-not-found" || code === "auth/wrong-password") {
-          errorMessage = "Invalid email or password.";
-        } else if (code === "auth/email-already-in-use") {
-          errorMessage = "An account with this email already exists.";
-        } else if (code === "auth/weak-password") {
+        const message = (error as { message: string }).message;
+        
+        // Handle common Supabase auth error messages
+        if (message.includes("Invalid login credentials")) {
+          errorMessage = "Invalid email or password. Please check your credentials and try again.";
+        } else if (message.includes("User already registered")) {
+          errorMessage = "An account with this email already exists. Please sign in instead.";
+        } else if (message.includes("Password should be")) {
           errorMessage = "Password should be at least 6 characters.";
-        } else if (code === "auth/invalid-email") {
+        } else if (message.includes("invalid email")) {
           errorMessage = "Please enter a valid email address.";
+        } else if (message.includes("Email not confirmed")) {
+          errorMessage = "Please check your email and click the confirmation link before signing in.";
+        } else if (message.includes("too many requests")) {
+          errorMessage = "Too many login attempts. Please wait a few minutes before trying again.";
+        } else if (message.includes("Signup disabled")) {
+          errorMessage = "Account registration is currently disabled. Please contact support.";
         }
       }
+      
       setErrors({ general: errorMessage });
     } finally {
       setIsLoading(false);
