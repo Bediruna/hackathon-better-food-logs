@@ -102,7 +102,7 @@ export default function ReportsPage() {
 
   // Daily breakdown for the chart
   const dailyData = Array.from({ length: days }, (_, i) => {
-    const date = subDays(new Date(), days - 1 - i);
+    const date = subDays(new Date(), i);
     const startDate = startOfDay(date);
     const endDate = endOfDay(date);
 
