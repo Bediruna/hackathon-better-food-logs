@@ -19,17 +19,20 @@ export interface FoodValidationData {
   cholesterol_mg?: number;
 }
 
-// Basic profanity filter - can be expanded
+// Basic profanity filter - focused on truly inappropriate content
 const PROFANITY_WORDS = [
-  'damn', 'hell', 'crap', 'shit', 'fuck', 'bitch', 'ass', 'bastard',
-  // Add more words as needed
+  'shit', 'fuck', 'bitch', 'bastard', 'cunt',
+  // Removed milder words like 'damn', 'hell', 'crap', 'ass' as they might appear in legitimate food contexts
+  // Add more words as needed, but keep it focused on truly inappropriate content
 ];
 
-// Common spam patterns
+// Common spam patterns - made less stringent to avoid false positives on food names
 const SPAM_PATTERNS = [
-  /(.)\1{4,}/i, // Repeated characters (5+ times)
-  /^[A-Z\s!]{10,}$/i, // All caps with exclamation
-  /\b(buy|sale|discount|free|click|visit|www\.|http)/i, // Promotional terms
+  /(.)\1{7,}/i, // Repeated characters (8+ times) - allows for foods like "cheese" or "coffee"
+  /^[A-Z\s!]{20,}$/i, // All caps with exclamation (20+ chars) - more lenient for food names
+  /\b(buy now|sale|discount|click here|visit|www\.|http:\/\/|https:\/\/)/i, // More specific promotional terms
+  /!!!{3,}/, // Multiple exclamation marks (4+ in a row)
+  /\$\$\$+/, // Multiple dollar signs
 ];
 
 export const validateFoodEntry = (data: FoodValidationData): ValidationResult => {
@@ -144,7 +147,18 @@ export const containsProfanity = (text: string): boolean => {
 };
 
 export const isSpammy = (text: string): boolean => {
-  return SPAM_PATTERNS.some(pattern => pattern.test(text));
+  // Count how many spam patterns match
+  const matchCount = SPAM_PATTERNS.filter(pattern => pattern.test(text)).length;
+  
+  // More lenient: require multiple indicators or very obvious spam
+  if (matchCount >= 2) return true; // Multiple spam indicators
+  
+  // Check for very obvious spam patterns
+  if (/\b(buy now|click here)\b/i.test(text)) return true;
+  if (/^[A-Z\s!]{30,}$/.test(text)) return true; // Very long all-caps text
+  if (/(.)\1{10,}/.test(text)) return true; // Excessive character repetition
+  
+  return false;
 };
 
 export const checkForDuplicateFood = (
