@@ -5,6 +5,7 @@ import Image from "next/image";
 import { BarChart3, Home, User, LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePathname } from "next/navigation";
+import GitHubIcon from "./GitHubIcon";
 
 interface ClientLayoutProps {
   children: React.ReactNode;
@@ -88,22 +89,33 @@ const handleLogout = async () => {
       <main className={isAuthPage ? "" : "max-w-4xl mx-auto px-4 py-6"}>
         {children}
         {!isAuthPage && (
-          <Link
-            href="https://bolt.new/"
-            className="flex items-center pt-2 gap-1 justify-end w-full italic hover:underline"
-            target="_blank"
-            rel="noreferrer"
-          >
-            <span>Built with Bolt.new</span>
+          <div className="flex items-center justify-between pt-2 w-full">
+            <Link
+              href="https://github.com/Bediruna/hackathon-better-food-logs"
+              className="flex items-center gap-1 italic hover:underline text-gray-600"
+              target="_blank"
+              rel="noreferrer"
+            >
+              <GitHubIcon size={20} />
+              <span>View on GitHub</span>
+            </Link>
 
-            <Image
-              src="/white_circle_360x360.png"
-              alt="Made with Bolt"
-              width={32}
-              height={32}
-              className="inline size-8"
-            />
-          </Link>
+            <Link
+              href="https://bolt.new/"
+              className="flex items-center gap-1 italic hover:underline"
+              target="_blank"
+              rel="noreferrer"
+            >
+              <span>Built with Bolt.new</span>
+              <Image
+                src="/white_circle_360x360.png"
+                alt="Made with Bolt"
+                width={32}
+                height={32}
+                className="inline size-8"
+              />
+            </Link>
+          </div>
         )}
       </main>
 
